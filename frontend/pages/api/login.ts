@@ -19,30 +19,35 @@ export default async function handler(
       const auth = getAuth(firebaseApp);
       const { email, password } = req.body;
 
+<<<<<<< HEAD
       // Log incoming request for debugging
       console.log("Received login request:", { email: email ? "provided" : "missing", password: password ? "provided" : "missing" });
+=======
+      console.log("Received login request:", req.body);
+>>>>>>> abad0f97af81520741584ecd9f7a644b8dc5eff2
 
-      // Check if email and password are provided
       if (!email || !password) {
         console.log("Error: Missing required fields");
         return res.status(400).json({ error: "Email and password are required" });
       }
 
-      // Sign in the user using Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+<<<<<<< HEAD
       // Log the user data for debugging
       console.log("User logged in:", user.uid);
+=======
+      console.log("User logged in:", user);
+>>>>>>> abad0f97af81520741584ecd9f7a644b8dc5eff2
 
-      // Return the user data and JWT token
       const token = await user.getIdToken();
 
       return res.status(200).json({
         uid: user.uid,
         email: user.email,
         token,
-        displayName: user.displayName, // Include displayName in the response
+        displayName: user.displayName,
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -54,13 +59,16 @@ export default async function handler(
           return res.status(500).json({ error: "An unknown error occurred" });
         }
       } else {
-        // In case the error is not an instance of Error (e.g., network issues)
         console.error("Unknown error:", error);
-        return res.status(500).json({ error: 'An unknown error occurred' });
+        return res.status(500).json({ error: "An unknown error occurred" });
       }
     }
   } else {
+<<<<<<< HEAD
     console.log("Method not allowed:", req.method);
     res.status(405).json({ error: 'Method Not Allowed' });
+=======
+    res.status(405).json({ error: "Method Not Allowed" });
+>>>>>>> abad0f97af81520741584ecd9f7a644b8dc5eff2
   }
 }
