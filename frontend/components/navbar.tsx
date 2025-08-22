@@ -10,7 +10,7 @@ export default function Navbar() {
           {/* Navigation links aligned to the right */}
           <div className="hidden md:flex space-x-6 ml-auto">
             <Link href="/" className="hover:text-secondary">Home</Link>
-            <Link href="/about-us" className="hover:text-secondary">About Us</Link>
+            <Link href="/stories" className="hover:text-secondary">Stories & Updates</Link>
             <Link href="/donate" className="hover:text-secondary">Donate</Link>
             <Link href="/login" className="hover:text-secondary">Login/Signup</Link>
           </div>
