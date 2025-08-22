@@ -2,18 +2,25 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { firebaseApp } from "@/lib/firebase";
 
-const auth = getAuth(firebaseApp);
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log("Login API called with method:", req.method);
+  
   if (req.method === "POST") {
     try {
+      // Check if Firebase is properly initialized
+      if (!firebaseApp) {
+        console.error("Firebase app not initialized");
+        return res.status(500).json({ error: "Firebase configuration error" });
+      }
+
+      const auth = getAuth(firebaseApp);
       const { email, password } = req.body;
 
       // Log incoming request for debugging
-      console.log("Received login request:", req.body);
+      console.log("Received login request:", { email: email ? "provided" : "missing", password: password ? "provided" : "missing" });
 
       // Check if email and password are provided
       if (!email || !password) {
@@ -26,7 +33,7 @@ export default async function handler(
       const user = userCredential.user;
 
       // Log the user data for debugging
-      console.log("User logged in:", user);
+      console.log("User logged in:", user.uid);
 
       // Return the user data and JWT token
       const token = await user.getIdToken();
@@ -53,6 +60,7 @@ export default async function handler(
       }
     }
   } else {
+    console.log("Method not allowed:", req.method);
     res.status(405).json({ error: 'Method Not Allowed' });
   }
 }
