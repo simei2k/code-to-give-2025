@@ -19,27 +19,28 @@ export default async function handler(
       const auth = getAuth(firebaseApp);
       const { email, password } = req.body;
 
-<<<<<<< HEAD
       // Log incoming request for debugging
-      console.log("Received login request:", { email: email ? "provided" : "missing", password: password ? "provided" : "missing" });
-=======
-      console.log("Received login request:", req.body);
->>>>>>> abad0f97af81520741584ecd9f7a644b8dc5eff2
+      console.log("Received login request:", { 
+        email: email ? "provided" : "missing", 
+        password: password ? "provided" : "missing" 
+      });
 
       if (!email || !password) {
         console.log("Error: Missing required fields");
         return res.status(400).json({ error: "Email and password are required" });
       }
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Please enter a valid email address" });
+      }
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-<<<<<<< HEAD
       // Log the user data for debugging
-      console.log("User logged in:", user.uid);
-=======
-      console.log("User logged in:", user);
->>>>>>> abad0f97af81520741584ecd9f7a644b8dc5eff2
+      console.log("User logged in successfully:", user.uid);
 
       const token = await user.getIdToken();
 
@@ -48,27 +49,31 @@ export default async function handler(
         email: user.email,
         token,
         displayName: user.displayName,
+        message: "Login successful"
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error("Error message:", error.message);
+        console.error("Login error:", error.message);
 
-        if (error.message.includes("auth/invalid-credential")) {
-          return res.status(404).json({ error: "Incorrect login information" });
+        // Handle different Firebase auth errors
+        if (error.message.includes("auth/invalid-credential") || 
+            error.message.includes("auth/wrong-password") ||
+            error.message.includes("auth/user-not-found")) {
+          return res.status(401).json({ error: "Invalid email or password" });
+        } else if (error.message.includes("auth/too-many-requests")) {
+          return res.status(429).json({ error: "Too many failed attempts. Please try again later." });
+        } else if (error.message.includes("auth/user-disabled")) {
+          return res.status(403).json({ error: "This account has been disabled" });
         } else {
-          return res.status(500).json({ error: "An unknown error occurred" });
+          return res.status(500).json({ error: "Login failed. Please try again." });
         }
       } else {
         console.error("Unknown error:", error);
-        return res.status(500).json({ error: "An unknown error occurred" });
+        return res.status(500).json({ error: "An unexpected error occurred" });
       }
     }
   } else {
-<<<<<<< HEAD
     console.log("Method not allowed:", req.method);
-    res.status(405).json({ error: 'Method Not Allowed' });
-=======
-    res.status(405).json({ error: "Method Not Allowed" });
->>>>>>> abad0f97af81520741584ecd9f7a644b8dc5eff2
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 }
