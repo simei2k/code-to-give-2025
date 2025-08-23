@@ -31,7 +31,13 @@ export default function Navbar() {
           <div className="flex h-16 items-center justify-between">
             {/* Logo/Brand */}
             <div className="flex items-center">
-              <span className="text-xl font-bold text-green-800">Code to Give</span>
+              <Link href="/" className="flex items-center">
+                <img 
+                  src="/projectreach.png" 
+                  alt="Project REACH" 
+                  className="h-10 w-auto"
+                />
+              </Link>
             </div>
             
             {/* Navigation links */}
@@ -46,6 +52,9 @@ export default function Navbar() {
               </Link>
               <Link href="/about-us" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 About Us
+              </Link>
+              <Link href="/stories" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+                Stories
               </Link>
               <Link href="/donate" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 Donate

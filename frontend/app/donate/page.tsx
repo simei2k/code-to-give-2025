@@ -45,7 +45,7 @@ const cardEntrance = keyframes`
 `;
 
 // Main container with fullscreen layout
-const StyledContainer = styled(Box)({
+export const StyledContainer = styled(Box)({
   minHeight: '100vh',
   background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)',
   display: 'flex',
@@ -56,7 +56,7 @@ const StyledContainer = styled(Box)({
 });
 
 // Glass card effect
-const GlassCard = styled(Paper)({
+export const GlassCard = styled(Paper)({
   background: 'rgba(255, 252, 236, 0.95)',
   backdropFilter: 'blur(20px)',
   borderRadius: '24px',
@@ -89,29 +89,36 @@ const RotatingCardsContainer = styled(Box)({
 });
 
 // Individual rotating card
-const RotatingCard = styled(Box)<{ isActive: boolean; rotation: number; zIndex: number }>(({ isActive, rotation, zIndex }) => ({
-  position: 'absolute',
-  width: '100%',
-  height: '100%',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  transform: `perspective(1000px) rotateY(${rotation}deg) translateZ(${isActive ? '0px' : '-50px'})`,
-  opacity: isActive ? 1 : 0.6,
-  transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-  zIndex: zIndex,
-  boxShadow: isActive 
-    ? '0 15px 30px rgba(0, 110, 52, 0.3), 0 5px 15px rgba(0,0,0,0.1)' 
-    : '0 8px 16px rgba(0, 110, 52, 0.2)',
-  '& img': {
+const RotatingCard = styled(Box, {
+  shouldForwardProp: (prop) =>
+    !['isActive', 'rotation', 'zIndex'].includes(prop as string),
+})<{ isActive: boolean; rotation: number; zIndex: number }>(
+  ({ isActive, rotation, zIndex }) => ({
+    position: 'absolute',
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
     borderRadius: '16px',
-  }
-}));
+    overflow: 'hidden',
+    transform: `perspective(1000px) rotateY(${rotation}deg) translateZ(${isActive ? '0px' : '-50px'})`,
+    opacity: isActive ? 1 : 0.6,
+    transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    zIndex, // OK to use here – it won't be forwarded as an attribute
+    boxShadow: isActive
+      ? '0 15px 30px rgba(0, 110, 52, 0.3), 0 5px 15px rgba(0,0,0,0.1)'
+      : '0 8px 16px rgba(0, 110, 52, 0.2)',
+    '& img': {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      borderRadius: '16px',
+    },
+  })
+);
 
 // Card overlay for text
-const CardOverlay = styled(Box)<{ isActive: boolean }>(({ isActive }) => ({
+const CardOverlay = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive: boolean }>(({ isActive }) => ({
   position: 'absolute',
   bottom: 0,
   left: 0,
@@ -153,14 +160,19 @@ const StyledSlider = styled(Slider)({
     opacity: 1,
   },
   '& .MuiSlider-thumb': {
-    height: 32,
-    width: 32,
-    backgroundColor: '#fffcec',
-    border: '4px solid #006e34',
-    boxShadow: '0 6px 12px rgba(0, 110, 52, 0.3)',
+    height: 40,
+    width: 40,
+    backgroundColor: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+    backgroundImage: 'url(/book-custom.svg)',
+    backgroundSize: '40px 40px',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    filter: 'none', // Remove the filter
     '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-      boxShadow: '0 8px 16px rgba(0, 110, 52, 0.4)',
-      border: '4px solid #004d24',
+      boxShadow: '0 0 0 8px rgba(0, 110, 52, 0.16)',
+      border: 'none',
     },
     '&:before': {
       display: 'none',
@@ -303,7 +315,7 @@ const CrownIcon = styled(Box, {
 
 export default function DonatePage() {
   const [amount, setAmount] = useState<number>(50);
-  const [customAmount, setCustomAmount] = useState<string>('');
+  const [customAmount, setCustomAmount] = useState<string>('50');
 
   const sliderMarks = [
     { value: 1, label: '$1' },
@@ -313,12 +325,24 @@ export default function DonatePage() {
   ];
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
-    setAmount(newValue as number);
-    setCustomAmount(''); // Clear custom amount when slider changes
+    const value = newValue as number;
+    setAmount(value);
+    setCustomAmount(value.toString()); // Sync custom amount with slider
   };
 
   const handleCustomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomAmount(event.target.value);
+    const value = event.target.value;
+    
+    // Prevent negative values and non-numeric input
+    if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0)) {
+      setCustomAmount(value);
+      
+      // Update slider if value is valid and within range
+      if (value !== '' && !isNaN(Number(value))) {
+        const numValue = Math.max(0, Number(value)); // Ensure non-negative
+        setAmount(Math.min(Math.max(numValue, 1), 500)); // Keep slider in bounds but allow custom amount to exceed
+      }
+    }
   };
 
   const getActiveCardIndex = () => {
@@ -333,14 +357,17 @@ export default function DonatePage() {
   };
 
   const getMessage = () => {
-    const currentAmount = customAmount ? parseFloat(customAmount) : amount;
+    const currentAmount = customAmount && !isNaN(Number(customAmount)) ? parseFloat(customAmount) : amount;
     if (currentAmount >= 500) return "You're a true champion of education!";
     if (currentAmount >= 250) return "Your generosity will transform many lives!";
     if (currentAmount >= 50) return "Thank you for making education accessible!";
-    return "Every dollar counts in changing a child's future!";
+    if (currentAmount > 0) return "Every dollar counts in changing a child's future!";
+    return "Enter an amount to see your impact!";
   };
 
-  const displayAmount = customAmount ? `$${customAmount}` : `$${amount}`;
+  const displayAmount = customAmount && !isNaN(Number(customAmount)) && Number(customAmount) > 0 
+    ? `$${customAmount}` 
+    : `$${amount}`;
 
   return (
     <StyledContainer>
@@ -532,39 +559,42 @@ export default function DonatePage() {
               </Box>
             </Grow>
 
-            {/* Custom Amount Input - Only show when slider reaches maximum */}
-            {amount >= 500 && (
-              <Fade in timeout={1800}>
-                <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
-                  <TextField
-                    label="Enter a custom amount"
-                    type="number"
-                    value={customAmount}
-                    onChange={handleCustomChange}
-                    fullWidth
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor: '#006e34',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: '#006e34',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#006e34',
-                        },
+            {/* Custom Amount Input - Always visible */}
+            <Fade in timeout={1800}>
+              <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
+                <TextField
+                  label="Enter a custom amount"
+                  type="number"
+                  value={customAmount}
+                  onChange={handleCustomChange}
+                  fullWidth
+                  inputProps={{
+                    min: 0,
+                    step: 1,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#006e34',
                       },
-                      '& .MuiInputLabel-root': {
-                        color: '#006e34',
+                      '&:hover fieldset': {
+                        borderColor: '#006e34',
                       },
-                      '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#006e34',
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#006e34',
                       },
-                    }}
-                  />
-                </Box>
-              </Fade>
-            )}
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#006e34',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#006e34',
+                    },
+                  }}
+                  helperText="Amount will sync with the slider above"
+                />
+              </Box>
+            </Fade>
 
             {/* Donate Button */}
             <Fade in timeout={1900}>
