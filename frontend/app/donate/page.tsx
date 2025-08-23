@@ -605,7 +605,7 @@ export default function DonatePage() {
       body: JSON.stringify({
         amount: numericAmount,
         displayName: 'Anonymous',
-        email: `anonymous+${Date.now()}@donor.local`,
+        email: currentUser ? currentUser.email : `anonymous+${Date.now()}@donor.local`,
         message: captionsBank[Math.random() * captionsBank.length],
         donorId: uid,
         district: region,
@@ -673,7 +673,7 @@ export default function DonatePage() {
         },
         body: JSON.stringify({
           email: currentUser.email,
-          amount: amount
+          amount: amount // extra amount added to the total amount of the user
         })
       });
   
@@ -1231,7 +1231,7 @@ export default function DonatePage() {
               <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
               <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
               <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>Anonymous</strong></Typography>
-              <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>Reminder: An anonymous donation will not be published to the leaderboard. If you're logged in, you can still view your donation in 'Recent Donations'.</Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>Reminder: An anonymous donation will not be published to the leaderboard. If you're logged in, you can still view your donation in 'Profile'.</Typography>
               <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
                 {region && <Chip size="small" label={region} />}
                 {school && <Chip size="small" label={school} />}
