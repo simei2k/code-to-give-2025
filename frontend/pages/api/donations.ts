@@ -18,7 +18,7 @@ export default async function handler(
         return res.status(500).json({ error: "Firebase configuration error" });
       }
 
-      const { amount, displayName, email, message } = req.body;
+      const { amount, displayName, email, message, donorId, district, school } = req.body;
 
       // Log incoming request for debugging
       console.log("Received donation request:", { 
@@ -40,7 +40,10 @@ export default async function handler(
         createdAt: new Date(),
         displayName: displayName || "-",
         email: email,
-        message: message || "-"
+        message: message || "-",
+        donorId: donorId || null,
+        district: district || null,
+        school: school || null
       };
 
       // Add the donation to Firestore

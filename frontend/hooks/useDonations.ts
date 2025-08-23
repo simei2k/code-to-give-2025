@@ -9,6 +9,8 @@ type Stats = {
   largest: number;
   byMonth: { label: string; monthKey: string; total: number; cumulative: number }[];
   byDistrict: { district: string; total: number; count: number }[];
+  byRegion: { region: string; total: number; count: number }[];
+  bySchool: { school: string; total: number; count: number }[];
   monthlyStreak: number; // consecutive months up to most recent month with >=1 donation
 };
 
@@ -74,7 +76,7 @@ export function useDonations(email?: string, donorId?: string | null) {
 
   const stats: Stats = useMemo(() => {
     if (donations.length === 0)
-      return { total: 0, count: 0, largest: 0, byMonth: [], byDistrict: [], monthlyStreak: 0 };
+      return { total: 0, count: 0, largest: 0, byMonth: [], byDistrict: [], byRegion: [], bySchool: [], monthlyStreak: 0 };
 
     const total = donations.reduce((s, d) => s + Number(d.amount || 0), 0);
     const count = donations.length;
@@ -136,7 +138,35 @@ export function useDonations(email?: string, donorId?: string | null) {
       ...v,
     }));
 
-    return { total, count, largest, byMonth, byDistrict, monthlyStreak: streak };
+    // by region (using district as region for now, since we don't have separate region field)
+    const regionMap = new Map<string, { total: number; count: number }>();
+    donations.forEach((d) => {
+      const key = (d.district || "Unspecified").toString();
+      const cur = regionMap.get(key) ?? { total: 0, count: 0 };
+      cur.total += Number(d.amount || 0);
+      cur.count += 1;
+      regionMap.set(key, cur);
+    });
+    const byRegion = Array.from(regionMap.entries()).map(([region, v]) => ({
+      region,
+      ...v,
+    }));
+
+    // by school
+    const schoolMap = new Map<string, { total: number; count: number }>();
+    donations.forEach((d) => {
+      const key = (d.school || "Unspecified").toString();
+      const cur = schoolMap.get(key) ?? { total: 0, count: 0 };
+      cur.total += Number(d.amount || 0);
+      cur.count += 1;
+      schoolMap.set(key, cur);
+    });
+    const bySchool = Array.from(schoolMap.entries()).map(([school, v]) => ({
+      school,
+      ...v,
+    }));
+
+    return { total, count, largest, byMonth, byDistrict, byRegion, bySchool, monthlyStreak: streak };
   }, [donations]);
 
   return { loading, error, donations, stats };

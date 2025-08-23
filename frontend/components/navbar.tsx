@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { FaInstagram, FaTiktok, FaFacebook } from "react-icons/fa6";
@@ -8,6 +9,7 @@ import NewButton from "./NewButton";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -24,6 +26,14 @@ export default function Navbar() {
     } catch (err) {
       console.error("Error logging out:", err);
     }
+  };
+
+  // Helper function to check if a link is active
+  const isActiveLink = (path: string) => {
+    if (!pathname) return false;
+    if (path === "/" && pathname === "/") return true;
+    if (path !== "/" && pathname.startsWith(path)) return true;
+    return false;
   };
 
   return (
@@ -73,20 +83,55 @@ export default function Navbar() {
             {/* Navigation links */}
             <div className="hidden md:flex space-x-8 md:items-center">
               {user && (
-                <Link href="/donor-home" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+                <Link 
+                  href="/donor-home" 
+                  className={`font-medium transition-colors ${
+                    isActiveLink("/donor-home") 
+                      ? "text-green-600 border-b-2 border-green-600 pb-1" 
+                      : "text-gray-700 hover:text-green-600"
+                  }`}
+                >
                   Profile
                 </Link>
               )}
-              <Link href="/" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+              <Link 
+                href="/" 
+                className={`font-medium transition-colors ${
+                  isActiveLink("/") 
+                    ? "text-green-600 border-b-2 border-green-600 pb-1" 
+                    : "text-gray-700 hover:text-green-600"
+                }`}
+              >
                 Home
               </Link>
-              <Link href="/about-us" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+              <Link 
+                href="/about-us" 
+                className={`font-medium transition-colors ${
+                  isActiveLink("/about-us") 
+                    ? "text-green-600 border-b-2 border-green-600 pb-1" 
+                    : "text-gray-700 hover:text-green-600"
+                }`}
+              >
                 About Us
               </Link>
-              <Link href="/stories" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+              <Link 
+                href="/stories" 
+                className={`font-medium transition-colors ${
+                  isActiveLink("/stories") 
+                    ? "text-green-600 border-b-2 border-green-600 pb-1" 
+                    : "text-gray-700 hover:text-green-600"
+                }`}
+              >
                 Stories
               </Link>
-              <Link href="/donate" className="text-gray-700 hover:text-green-600 font-medium transition-colors mb-1">
+              <Link 
+                href="/donate" 
+                className={`font-medium transition-colors mb-1 ${
+                  isActiveLink("/donate") 
+                    ? "text-green-600" 
+                    : "text-gray-700 hover:text-green-600"
+                }`}
+              >
                 <NewButton>
                   Donate
                 </NewButton>
@@ -94,7 +139,11 @@ export default function Navbar() {
               {!user ? (
                 <Link
                   href="/login"
-                  className="text-gray-700 hover:text-green-600 font-medium transition-colors"
+                  className={`font-medium transition-colors ${
+                    isActiveLink("/login") 
+                      ? "text-green-600 border-b-2 border-green-600 pb-1" 
+                      : "text-gray-700 hover:text-green-600"
+                  }`}
                 >
                   Login/Signup
                 </Link>
