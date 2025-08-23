@@ -3,6 +3,7 @@ import { Inter, Open_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { AuthProvider } from "@/app/providers/AuthProvider";
+import GallerySection from "@/components/GallerySection";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,7 +37,8 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Navbar />
-          <main className="pt-20">{children}</main>
+          <main>{children}</main>
+          <GallerySection />
         </AuthProvider>
       </body>
     </html>

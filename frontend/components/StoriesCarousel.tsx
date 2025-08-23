@@ -16,9 +16,10 @@ const urlFromAsset = (asset?: any) => {
 interface StoriesCarouselProps {
   posts: PostItem[];
   intervalMs?: number;
+  onSelect?: (post: PostItem) => void;
 }
 
-export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCarouselProps) {
+export default function StoriesCarousel({ posts, intervalMs = 4000, onSelect }: StoriesCarouselProps) {
   const listRef = useRef<HTMLUListElement | null>(null);
   const cardWidthRef = useRef(0);
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -70,6 +71,7 @@ export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCar
     autoTimer.current = setInterval(() => {
       const w = cardWidthRef.current || el.clientWidth;
       const max = el.scrollWidth - el.clientWidth;
+      const step = w + 24; // include gap
       if (el.scrollLeft + w + 8 >= max) {
         // Reached (or nearly) the end: stop auto-scrolling instead of looping back.
         if (autoTimer.current) {
@@ -127,43 +129,66 @@ export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCar
               data-slide
               className="flex-none snap-start w-[300px] sm:w-[360px] lg:w-[420px]"
             >
-              <Link
-                href={href}
-                className="group block h-full overflow-hidden rounded-xl border border-[#006e34]/10 bg-white shadow-sm transition-all hover:-translate-y-0.3 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
-              >
-                {/* image */}
-                {img ? (
-                  <div className="relative aspect-[16/9] w-full">
-                    <Image
-                      src={`${img}?w=1200&h=675&fit=fill&fm=jpg&q=80`}
-                      alt={post.fields.title}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 33vw"
-                    />
+              {onSelect ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(post)}
+                  className="text-left w-full group block h-full overflow-hidden rounded-xl border border-[#006e34]/10 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
+                >
+                  {img ? (
+                    <div className="relative aspect-[16/9] w-full">
+                      <Image
+                        src={`${img}?w=1200&h=675&fit=fill&fm=jpg&q=80`}
+                        alt={post.fields.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[16/9] items-center justify-center bg-[#f7ffe9] text-sm text-[#527e6a]">
+                      Photo coming soon
+                    </div>
+                  )}
+                  <div className="p-4 flex flex-col">
+                    <h4 className="line-clamp-2 text-lg font-semibold leading-snug text-gray-900">
+                      {post.fields.title}
+                    </h4>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span aria-hidden className="translate-x-0 text-[#0f5132] transition-all">Open story →</span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex aspect-[16/9] items-center justify-center bg-[#f7ffe9] text-sm text-[#527e6a]">
-                    Photo coming soon
+                </button>
+              ) : (
+                <Link
+                  href={href}
+                  className="group block h-full overflow-hidden rounded-xl border border-[#006e34]/10 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
+                >
+                  {img ? (
+                    <div className="relative aspect-[16/9] w-full">
+                      <Image
+                        src={`${img}?w=1200&h=675&fit=fill&fm=jpg&q=80`}
+                        alt={post.fields.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[16/9] items-center justify-center bg-[#f7ffe9] text-sm text-[#527e6a]">
+                      Photo coming soon
+                    </div>
+                  )}
+                  <div className="p-4 flex flex-col">
+                    <h4 className="line-clamp-2 text-lg font-semibold leading-snug text-gray-900">
+                      {post.fields.title}
+                    </h4>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span aria-hidden className="translate-x-0 text-[#0f5132] transition-all">Read more →</span>
+                    </div>
                   </div>
-                )}
-
-                {/* content */}
-                <div className="p-4 flex flex-col">
-                  <h4 className="line-clamp-2 text-lg font-semibold leading-snug text-gray-900">
-                    {post.fields.title}
-                  </h4>
-                  {/* spacer so buttons/arrow line stays aligned if you add more meta later */}
-                  <div className="mt-3 flex items-center justify-between">
-                    <span
-                      aria-hidden
-                      className="translate-x-0 text-[#0f5132] transition-all"
-                    >
-                      Read more →
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              )}
             </li>
           );
         })}
