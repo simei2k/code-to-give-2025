@@ -1,6 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import { Box, Typography, Slider, TextField, Button, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip } from "@mui/material";
+import { Box, Typography, Slider, TextField, Button, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, IconButton, InputAdornment, Stepper, Step, StepLabel } from "@mui/material";
+import { Visibility, VisibilityOff, Close } from '@mui/icons-material';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { styled, keyframes } from "@mui/material/styles";
 
 const images = [
@@ -327,6 +330,16 @@ export default function DonatePage() {
   const [customAmount, setCustomAmount] = useState<string>('50');
   const [region, setRegion] = useState<string>('');
   const [school, setSchool] = useState<string>('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogStep, setDialogStep] = useState<'choose'|'login'|'confirm'>('choose');
+  const [userEmail, setUserEmail] = useState('');
+  const [userPassword, setUserPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState<{open:boolean; message:string; severity:'success'|'error'}>({open:false,message:'',severity:'success'});
+  const [thankYouOpen, setThankYouOpen] = useState(false);
+  const [lastDonationId, setLastDonationId] = useState<string | null>(null);
 
   const regionSchools: Record<string, string[]> = {
     'Kwai Tsing': [
@@ -400,6 +413,75 @@ export default function DonatePage() {
   const displayAmount = customAmount && !isNaN(Number(customAmount)) && Number(customAmount) > 0 
     ? `$${customAmount}` 
     : `$${amount}`;
+  const numericAmount = customAmount && !isNaN(Number(customAmount)) && Number(customAmount) > 0 ? Number(customAmount) : amount;
+
+  // Track auth state
+  React.useEffect(()=>{
+    const unsub = onAuthStateChanged(auth, (u)=> setCurrentUser(u));
+    return () => unsub();
+  },[]);
+
+  // Submit anonymous donation
+  const submitAnonymous = async () => {
+    const res = await fetch('/api/donations', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        amount: numericAmount,
+        displayName: 'Anonymous',
+        email: `anonymous+${Date.now()}@donor.local`,
+        message: `${school || ''}${school && region ? ', ' : ''}${region || ''}` || '-',
+        region,
+        school
+      })
+    });
+    if(!res.ok){
+      const data = await res.json().catch(()=>({error:'Unknown error'}));
+      throw new Error(data.error || 'Donation failed');
+    }
+    const data = await res.json();
+    setLastDonationId(data.id || null);
+    setDialogOpen(false);
+    setThankYouOpen(true);
+  };
+
+  const handleLogin = async () => {
+    if(!isEmailValid(userEmail)) { setSnackbar({open:true, message:'Invalid email', severity:'error'}); return; }
+    try {
+      setSubmitting(true);
+      await signInWithEmailAndPassword(auth, userEmail, userPassword);
+      setSnackbar({open:true, message:'Logged in. Please confirm donation.', severity:'success'});
+      setDialogStep('confirm');
+    } catch(e:any){
+      setSnackbar({open:true, message:e.message || 'Login failed', severity:'error'});
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitAuthed = async () => {
+    if(!currentUser) return;
+    const res = await fetch('/api/donations', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        amount: numericAmount,
+        displayName: currentUser.displayName || currentUser.email || '-',
+        email: currentUser.email || `user+${Date.now()}@donor.local`,
+        message: `${school || ''}${school && region ? ', ' : ''}${region || ''}` || '-',
+        region,
+        school
+      })
+    });
+    if(!res.ok){
+      const data = await res.json().catch(()=>({error:'Unknown error'}));
+      throw new Error(data.error || 'Donation failed');
+    }
+    const data = await res.json();
+    setLastDonationId(data.id || null);
+    setDialogOpen(false);
+    setThankYouOpen(true);
+  };
 
   const handleRegionChange = (e: any) => {
     const newRegion = e.target.value as string;
@@ -699,7 +781,7 @@ export default function DonatePage() {
                 <FloatingButton 
                   fullWidth 
                   disabled={!region || !school}
-                  onClick={() => console.log(`Donating ${displayAmount} to ${school} (${region})`)}
+                  onClick={() => setDialogOpen(true)}
                 >
                   {region && school ? `Donate ${displayAmount} Now 🚀` : 'Select Region & School'}
                 </FloatingButton>
@@ -944,6 +1026,90 @@ export default function DonatePage() {
         </Fade>
 
       </GlassCard>
+      {/* Donation Confirmation Dialog */}
+      <Dialog open={dialogOpen} onClose={() => !submitting && setDialogOpen(false)} maxWidth="xs" fullWidth
+        PaperProps={{ sx: { position:'relative', borderRadius: 5, pb: 2, background:'linear-gradient(135deg,#fffcec 0%, #f5f2e8 100%)', border:'1px solid rgba(0,110,52,0.25)' } }}>
+        <IconButton size="small" onClick={()=>!submitting && setDialogOpen(false)} sx={{ position:'absolute', top:6, right:6, color:'#006e34', opacity:0.6, '&:hover':{opacity:1}}}><Close fontSize="small" /></IconButton>
+        <DialogTitle sx={{ fontWeight:800, color:'#006e34', textAlign:'center', pb:1 }}>Donation</DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={ dialogStep === 'choose' ? 0 : dialogStep === 'login' ? 1 : 2 } alternativeLabel sx={{ mb:2 }}>
+            <Step><StepLabel>Select</StepLabel></Step>
+            <Step><StepLabel>Login</StepLabel></Step>
+            <Step><StepLabel>Confirm</StepLabel></Step>
+          </Stepper>
+          {dialogStep === 'choose' && (
+            <Box sx={{ textAlign:'center' }}>
+              <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : 'Selected beneficiary'}</Typography>
+              <Typography variant="body2" sx={{ mt:2, color:'#006e34', fontStyle:'italic' }}>Log in to appear on the leaderboard, or donate quietly.</Typography>
+              <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
+                {region && <Chip size="small" label={region} />}
+                {school && <Chip size="small" label={school} />}
+              </Box>
+              <Box sx={{ mt:3, display:'flex', flexDirection:'column', gap:1.5 }}>
+                <Button variant="contained" fullWidth onClick={()=> setDialogStep('login')} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700, '&:hover':{ background:'linear-gradient(45deg,#004d24,#003318)'} }}>Log In</Button>
+                <Button variant="text" fullWidth disabled={submitting} onClick={async ()=>{
+                  try { setSubmitting(true); await submitAnonymous(); } finally { setSubmitting(false);} }} sx={{ fontWeight:600, color:'#004d24', opacity:0.75, textTransform:'none', '&:hover':{ opacity:1, background:'rgba(0,110,52,0.06)' } }}>{submitting ? <CircularProgress size={18} /> : 'Donate Anonymously'}</Button>
+              </Box>
+            </Box>
+          )}
+          {dialogStep === 'login' && (
+            <Box component="form" onSubmit={async (e)=>{ e.preventDefault(); await handleLogin(); }} sx={{ mt:1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight:600, mb:1, color:'#006e34', textAlign:'center' }}>Login to Continue</Typography>
+              <TextField label="Email" type="email" value={userEmail} onChange={e=>setUserEmail(e.target.value)} fullWidth size="small" sx={{ mb:2 }} required />
+              <TextField label="Password" type={showPassword?'text':'password'} value={userPassword} onChange={e=>setUserPassword(e.target.value)} fullWidth size="small" required 
+                InputProps={{ endAdornment: <InputAdornment position="end"><IconButton size="small" onClick={()=>setShowPassword(s=>!s)}>{showPassword? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> }} />
+              <Box sx={{ display:'flex', gap:1.5, mt:3 }}>
+                <Button onClick={()=> setDialogStep('choose')} variant="outlined" color="inherit" fullWidth disabled={submitting}>Back</Button>
+                <Button type="submit" variant="contained" fullWidth disabled={submitting || !userEmail || !userPassword} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>{submitting? <CircularProgress size={20} /> : 'Login'}</Button>
+              </Box>
+            </Box>
+          )}
+          {dialogStep === 'confirm' && (
+            <Box sx={{ textAlign:'center' }}>
+              <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
+              <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>{currentUser?.email}</strong></Typography>
+              <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
+                {region && <Chip size="small" label={region} />}
+                {school && <Chip size="small" label={school} />}
+              </Box>
+              <Box sx={{ mt:3, display:'flex', gap:1.5 }}>
+                <Button onClick={()=> setDialogStep('choose')} variant="outlined" color="inherit" fullWidth disabled={submitting}>Back</Button>
+                <Button fullWidth variant="contained" disabled={submitting} onClick={async ()=>{ try{ setSubmitting(true); await submitAuthed(); } finally { setSubmitting(false);} }} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>{submitting ? <CircularProgress size={20} /> : 'Confirm Donation'}</Button>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={() => setSnackbar(s => ({...s, open:false}))} anchorOrigin={{ vertical:'bottom', horizontal:'center' }}>
+        <Alert onClose={() => setSnackbar(s => ({...s, open:false}))} severity={snackbar.severity} variant="filled" sx={{ width:'100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+      {/* Thank You Dialog */}
+      <Dialog open={thankYouOpen} onClose={()=> setThankYouOpen(false)} maxWidth="xs" fullWidth
+        PaperProps={{ sx:{ borderRadius:5, background:'linear-gradient(135deg,#fffcec 0%, #f5f2e8 100%)', p:2, textAlign:'center', border:'1px solid rgba(0,110,52,0.25)' } }}>
+        <DialogTitle sx={{ fontWeight:800, color:'#006e34', pb:1 }}>Thank You! 💚</DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount} Donated</Typography>
+          {school && region && (
+            <Typography variant="body2" sx={{ mt:1, color:'#006e34' }}>{school}, {region}</Typography>
+          )}
+          <Typography variant="body2" sx={{ mt:2, color:'#006e34', opacity:0.85 }}>
+            Your support helps empower students and teachers. {currentUser ? 'You\'ll appear on the leaderboard shortly.' : 'Anonymous gifts still make a big impact.'}
+          </Typography>
+          {lastDonationId && (
+            <Typography variant="caption" sx={{ mt:2, display:'block', color:'#006e34', opacity:0.6 }}>Ref: {lastDonationId}</Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent:'center' }}>
+          <Button onClick={()=> setThankYouOpen(false)} variant="contained" sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </StyledContainer>
   );
 }
+
+// Helper functions appended (within same file scope not exported)
+function isEmailValid(email:string){ return /.+@.+\..+/.test(email); }
