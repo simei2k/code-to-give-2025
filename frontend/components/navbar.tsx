@@ -38,7 +38,7 @@ export default function Navbar() {
             <div className="hidden md:flex space-x-8">
               {user && (
                 <Link href="/donor-home" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-                  Donor Home
+                  Profile
                 </Link>
               )}
               <Link href="/" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
