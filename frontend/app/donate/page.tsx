@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { Box, Typography, Slider, Button, TextField, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, IconButton, InputAdornment, Stepper, Step, StepLabel } from "@mui/material";
 import { Visibility, VisibilityOff, Close } from '@mui/icons-material';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { styled, keyframes } from "@mui/material/styles";
 import NewButton from '@/components/NewButton';
 import LinearProgress from "@mui/material/LinearProgress";
@@ -249,25 +250,7 @@ const FloatingButton = styled(Button)({
   },
 });
 
-// Leaderboard data
-// const leaderboardData = [
-//   { id: 1, name: "Sarah Chen", amount: 450, rank: 1, level: "Champion", isCurrentUser: false },
-//   { id: 2, name: "Michael Rodriguez", amount: 380, rank: 2, level: "Hero", isCurrentUser: false },
-//   { id: 3, name: "Emma Thompson", amount: 320, rank: 3, level: "Hero", isCurrentUser: false },
-//   { id: 4, name: "You", amount: 120, rank: 4, level: "Supporter", isCurrentUser: true },
-//   { id: 5, name: "David Park", amount: 95, rank: 5, level: "Friend", isCurrentUser: false },
-//   { id: 6, name: "Lisa Wang", amount: 75, rank: 6, level: "Friend", isCurrentUser: false },
-//   { id: 7, name: "James Wilson", amount: 50, rank: 7, level: "Starter", isCurrentUser: false },
-// ];
-const leaderboardData = [
-  { id: 1, name: "Sarah Chen", amount: 450, rank: 1, message: "Because I care!", isCurrentUser: false },
-  { id: 2, name: "Michael Rodriguez", amount: 380, rank: 2, message: "Let's keep education accessible!", isCurrentUser: false },
-  { id: 3, name: "Emma Thompson", amount: 320, rank: 3, message: "Happy to be a part of this cause", isCurrentUser: false },
-  { id: 4, name: "You", amount: 120, rank: 4, message: "TAKE THIS SPOT FROM ME :)", isCurrentUser: true },
-  { id: 5, name: "David Park", amount: 95, rank: 5, message: "On behalf of Singapore!", isCurrentUser: false },
-  { id: 6, name: "Lisa Wang", amount: 75, rank: 6, message: "for equal access to education", isCurrentUser: false },
-  { id: 7, name: "James Wilson", amount: 50, rank: 7, message: "yay!", isCurrentUser: false },
-];
+
 
 // Leaderboard Container
 const LeaderboardContainer = styled(Paper)({
@@ -392,6 +375,20 @@ const CrownIcon = styled(Box, {
   zIndex: 10,
 }));
 
+// Loading placeholder for leaderboard
+const LeaderboardLoadingPlaceholder = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '60px 20px',
+  background: 'linear-gradient(135deg, #fffcec 0%, #f5f2e0 100%)',
+  borderRadius: '24px',
+  border: '2px solid rgba(0, 110, 52, 0.2)',
+  boxShadow: '0 15px 30px rgba(0, 110, 52, 0.15), 0 6px 12px rgba(0,0,0,0.1)',
+  minHeight: '300px',
+});
+
 // Simple helper arrays removed fancy styling; using standard Select components
 
 export default function DonatePage() {
@@ -410,6 +407,9 @@ export default function DonatePage() {
   const [thankYouOpen, setThankYouOpen] = useState(false);
   const [lastDonationId, setLastDonationId] = useState<string | null>(null);
   const [isLoggedInFromTheStart, setIsLoggedInFromTheStart] = useState<boolean | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
+  const [donors, setDonors] = useState<any[]>([]);
 
   const { width, height } = useWindowSize();
 
@@ -438,6 +438,29 @@ export default function DonatePage() {
     { value: 50, label: '$50' },
     { value: 250, label: '$250' },
     { value: 500, label: '$500' },
+  ];
+
+  const captionsBank: string[] = [
+    "Making a difference!",
+    "Every bit counts!",
+    "Together we rise!",
+    "Powering positive change!",
+    "Your generosity shines!",
+    "Small gift, big impact!",
+    "Building hope together!",
+    "Changing lives today!",
+    "Kindness in action!",
+    "Inspiring generosity!",
+    "Fueling the mission!",
+    "Your support matters!",
+    "Turning compassion into action!",
+    "Stronger together!",
+    "Spreading kindness!",
+    "Be the change!",
+    "Hearts united!",
+    "Impact beyond measure!",
+    "Hope starts here!",
+    "Together, unstoppable!"
   ];
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
@@ -494,6 +517,90 @@ export default function DonatePage() {
     return () => unsub();
   },[]);
 
+  // Function to fetch all donors from Firebase
+  const getLeaderboard = async () => {
+    try {
+      const donorsRef = collection(db, "donors");
+      const querySnapshot = await getDocs(donorsRef);
+      
+      const donors = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          displayName: data.displayName || "Anonymous",
+          totalDonated: data.totalDonated || 0,
+          email: data.email || "",
+        };
+      });
+      
+      setDonors(donors);
+      return donors;
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      return [];
+    }
+  };
+
+  // Function to sort donors by totalDonated (highest first)
+  const sortLeaderboard = (donors: any[]) => {
+    return donors.sort((a, b) => b.totalDonated - a.totalDonated);
+  };
+
+  const updateLeaderboardAfterDonation = (amount: number) => {
+    console.log("🔥 Current user:", currentUser);
+    console.log("🔥 Updating donation amount:", amount);
+    
+    // Update the raw donors data
+    const updatedDonors = donors.map((donor) =>
+      donor.displayName === currentUser.displayName
+        ? { ...donor, totalDonated: donor.totalDonated + amount }
+        : donor
+    );
+    setDonors(updatedDonors);
+    
+    // Update the formatted leaderboard data
+    const sortedDonors = sortLeaderboard(updatedDonors);
+    const formattedData = formatLeaderboardData(sortedDonors);
+    setLeaderboardData(formattedData);
+    
+    console.log("🔥 Updated donors:", updatedDonors);
+    console.log("🔥 Updated leaderboard:", formattedData);
+  }
+
+  // Function to format donors for display
+  const formatLeaderboardData = (donors: any[]) => {
+    return donors.map((donor, index) => ({
+      id: donor.id,
+      name: donor.displayName === currentUser.displayName ? `${donor.displayName} (You)` : donor.displayName,
+      amount: donor.totalDonated,
+      rank: index + 1,
+      message: captionsBank[Math.floor(Math.random() * captionsBank.length)],
+      isCurrentUser: currentUser?.email === donor.email
+    }));
+  };
+
+  // Fetch and update leaderboard when page loads
+  React.useEffect(() => {
+    const loadLeaderboard = async () => {
+      try {
+        setIsLeaderboardLoading(true);
+        const rawDonors = await getLeaderboard();
+        
+        const sortedDonors = sortLeaderboard(rawDonors);
+        
+        const formattedData = formatLeaderboardData(sortedDonors);
+        
+        setLeaderboardData(formattedData);
+      } catch (error) {
+        console.error("❌ Error loading leaderboard:", error);
+      } finally {
+        setIsLeaderboardLoading(false);
+      }
+    };
+
+    loadLeaderboard();
+  }, [currentUser]);
+
   // Submit anonymous donation
   const submitAnonymous = async () => {
     const res = await fetch('/api/donations', {
@@ -503,7 +610,7 @@ export default function DonatePage() {
         amount: numericAmount,
         displayName: 'Anonymous',
         email: `anonymous+${Date.now()}@donor.local`,
-        message: `${school || ''}${school && region ? ', ' : ''}${region || ''}` || '-',
+        message: captionsBank[Math.random() * captionsBank.length],
         donorId: uid,
         district: region,
         school
@@ -544,7 +651,7 @@ export default function DonatePage() {
         amount: numericAmount,
         displayName: currentUser.displayName || currentUser.email || '-',
         email: currentUser.email || `user+${Date.now()}@donor.local`,
-        message: `${school || ''}${school && region ? ', ' : ''}${region || ''}` || '-',
+        message: captionsBank[Math.random() * captionsBank.length],
         donorId: uid, 
         district: region,
         school
@@ -559,6 +666,7 @@ export default function DonatePage() {
     setDialogOpen(false);
     setThankYouOpen(true);
     setDialogStep('choose');
+    updateLeaderboardAfterDonation(amount);
 
     try {
       const response = await fetch('/api/donor', {
@@ -919,12 +1027,44 @@ export default function DonatePage() {
         </Box>
         
         <Fade in timeout={2200}>
-          <LeaderboardContainer elevation={0}>
-            <CrownWrapper>
-              <CrownSVG />
-            </CrownWrapper>
-          {/* Top Donor Hero Card */}      
-          {leaderboardData[0] && (
+          {isLeaderboardLoading ? (
+            <LeaderboardLoadingPlaceholder>
+              <CircularProgress 
+                size={60} 
+                sx={{ 
+                  color: '#006e34',
+                  mb: 3
+                }} 
+              />
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  color: '#006e34',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  mb: 1
+                }}
+              >
+                Loading Leaderboard...
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#006e34',
+                  opacity: 0.7,
+                  textAlign: 'center'
+                }}
+              >
+                Fetching the latest donor data
+              </Typography>
+            </LeaderboardLoadingPlaceholder>
+          ) : (
+            <LeaderboardContainer elevation={0}>
+              <CrownWrapper>
+                <CrownSVG />
+              </CrownWrapper>
+              {/* Top Donor Hero Card */}      
+              {leaderboardData[0] && (
             <Box sx={{ 
               p: 3, 
               mb: 3, 
@@ -994,7 +1134,8 @@ export default function DonatePage() {
               </Typography>
             </LeaderboardItem>
           ))}
-          </LeaderboardContainer>
+            </LeaderboardContainer>
+          )}
         </Fade>
       </GlassCard>
 
