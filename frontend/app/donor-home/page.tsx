@@ -27,8 +27,9 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
+import PDFViewer from "@/components/PDFViewer";
 
-const BadgeTooltip = styled(({ className, ...props }) => (
+const BadgeTooltip = styled(({ className, ...props }: any) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))(() => ({
   [`& .${tooltipClasses.tooltip}`]: {
@@ -588,17 +589,8 @@ export default function DonorDashboard() {
             </Box>
 
             {/* Popup content */}
-            <Typography variant="h5" sx={{ mb: 3, color: '#006e34', fontWeight: 'bold' }}>
-              Detailed Statistics
-            </Typography>
+            <PDFViewer storagePath="newsletter/" />
             
-            <Typography variant="body1" sx={{ mb: 2, color: '#333' }}>
-              This is your detailed view popup window. You can add any content here.
-            </Typography>
-            
-            <Typography variant="body2" sx={{ color: '#666' }}>
-              The popup opens from the bottom with a smooth animation and matches the background color scheme.
-            </Typography>
           </Box>
         </Box>
       )}
