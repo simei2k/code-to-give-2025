@@ -107,11 +107,15 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap gap-4 mb-6">
               <div className="bg-yellow-100 text-yellow-800 rounded-xl px-6 py-4 shadow font-semibold text-lg flex flex-col items-center w-48 min-w-[180px]">
-                <span className="text-3xl font-extrabold">40,000</span>
+                <span className="text-4xl font-extrabold">
+                  <LiveCounter end={40000} />
+                </span>
                 <span className="text-sm mt-1 text-center">Kindergarteners living in poverty</span>
               </div>
               <div className="bg-yellow-100 text-yellow-800 rounded-xl px-6 py-4 shadow font-semibold text-lg flex flex-col items-center w-48 min-w-[180px]">
-                <span className="text-3xl font-extrabold">29</span>
+                <span className="text-3xl font-extrabold">
+                  <LiveCounter end={29} />
+                </span>
                 <span className="text-sm mt-1 text-center">Kindergarten closures from <br/> 2025-2026</span>
               </div>
             </div>
@@ -176,25 +180,25 @@ export default function Home() {
             />
             <StatCard 
               label="Children Supported" 
-              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800">1,200+</span>} 
+              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800"><LiveCounter end={1200} />+</span>} 
               accent="bg-gradient-to-tr from-[#e6d3b3] to-[#bfa77a]" // darker sand/brown
               icon={<FaUserFriends className="text-gray-700" />} 
             />
             <StatCard 
               label="Tutoring Hours Funded" 
-              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800">3,400+</span>} 
+              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800"><LiveCounter end={3400} />+</span>} 
               accent="bg-gradient-to-tr from-[#b3c7b0] to-[#6b8c6a]" // darker earthy green
               icon={<FaClock className="text-gray-700" />} 
             />
             <StatCard 
               label="People have given to our cause" 
-              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800">420+</span>} 
+              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800"><LiveCounter end={420} />+</span>} 
               accent="bg-gradient-to-tr from-[#f6e9c2] to-[#e6cfa3]" // orange/brown/mustard yellow
               icon={<FaUsers className="text-gray-700" />} 
             />
             <StatCard 
               label="Donors gave 3 months in a row" 
-              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800">87</span>} 
+              value={<span className="text-5xl md:text-6xl font-extrabold text-gray-800"><LiveCounter end={87} /></span>} 
               accent="bg-gradient-to-tr from-[#f3f3ee] to-[#e6e4d3]" // subtle ochre/earth
               icon={<FaCalendarCheck className="text-gray-700" />} 
             />
