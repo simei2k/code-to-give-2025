@@ -17,7 +17,7 @@ export interface updatePostFields {
     content: Document;
     coverImage: Asset;
     slug: string;
-    location: 'General' | 'North' | 'East' | 'South' | 'West';
+    location: 'General' | 'Kwai Tsing' | 'Sham Shui Po' | 'Kwun Tong';
   }
   
 export type updatePostEntry = StrictEntry<updatePostFields, 'updatePost'>;
