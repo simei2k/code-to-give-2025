@@ -207,6 +207,7 @@ export function AnimatedDonationGraph({ data }: { data: { month: string; cumulat
 
 export default function DonorDashboard() {
   const [user, loading] = useAuthState(auth);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -399,6 +400,33 @@ export default function DonorDashboard() {
               </Typography>
             </StatCard>
           </Grid>
+
+          <Grid item xs={12} md={3}>
+            <StatCard 
+              centerContent 
+              onClick={() => setIsPopupOpen(true)}
+              sx={{ 
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                }
+              }}
+            >
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  color: '#006e34',
+                  fontWeight: 'bold',
+                  mb: 0.5,
+                  fontSize: { xs: '1.2rem', md: '1.4rem' }
+                }}
+              >
+                Your Impact! ➡️
+              </Typography>
+            </StatCard>
+          </Grid>
         </Grid>
       </Box>
 
@@ -491,6 +519,90 @@ export default function DonorDashboard() {
         </Table>
       </Paper>
       </GlassCard>
+
+      {/* Popup Window */}
+      {isPopupOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+          onClick={() => setIsPopupOpen(false)}
+        >
+          <Box
+            sx={{
+              background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)',
+              width: '95%',
+              maxWidth: '1200px',
+              minHeight: '94vh',
+              borderRadius: '24px 24px 0 0',
+              padding: '40px',
+              transform: isPopupOpen ? 'translateY(0)' : 'translateY(100%)',
+              transition: 'transform 0.3s ease-out',
+              animation: 'slideUp 0.3s ease-out',
+              '@keyframes slideUp': {
+                from: {
+                  transform: 'translateY(100%)',
+                },
+                to: {
+                  transform: 'translateY(0)',
+                },
+              },
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+              <Box
+                component="button"
+                onClick={() => setIsPopupOpen(false)}
+                sx={{
+                  background: 'rgba(0, 110, 52, 0.1)',
+                  border: 'none',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  color: '#006e34',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    background: 'rgba(0, 110, 52, 0.2)',
+                    transform: 'scale(1.1)',
+                  },
+                }}
+              >
+                ✕
+              </Box>
+            </Box>
+
+            {/* Popup content */}
+            <Typography variant="h5" sx={{ mb: 3, color: '#006e34', fontWeight: 'bold' }}>
+              Detailed Statistics
+            </Typography>
+            
+            <Typography variant="body1" sx={{ mb: 2, color: '#333' }}>
+              This is your detailed view popup window. You can add any content here.
+            </Typography>
+            
+            <Typography variant="body2" sx={{ color: '#666' }}>
+              The popup opens from the bottom with a smooth animation and matches the background color scheme.
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
     </StyledContainer>
   );
 }
