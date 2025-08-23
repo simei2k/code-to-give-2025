@@ -22,6 +22,9 @@ export default function Navbar() {
               <Link href="/about-us" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 About Us
               </Link>
+              <Link href="/stories" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+                Stories
+              </Link>
               <Link href="/donate" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 Donate
               </Link>
