@@ -7,6 +7,7 @@ import { getUpdatePostBySlug } from "@/lib/api";
 import ArticleBody from "@/components/ArticleBody";
 import { GlassCard, StyledContainer } from "@/app/donate/page";
 import ShareRow from "@/components/ShareRow";
+import type { Document } from '@contentful/rich-text-types';
 
 export const revalidate = 60;
 
@@ -14,6 +15,18 @@ const urlFromAsset = (asset?: any) => {
   const u = asset?.fields?.file?.url;
   return u ? (u.startsWith("//") ? `https:${u}` : u) : "";
 };
+
+function extractPlainText(doc: Document | undefined, max = 180): string {
+  if (!doc) return "";
+  const out: string[] = [];
+  const walk = (node: any) => {
+    if (!node) return;
+    if (node.nodeType === 'text' && node.value) out.push(node.value);
+    if (Array.isArray(node.content)) node.content.forEach(walk);
+  };
+  walk(doc);
+  return out.join(' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
 
 function formatDate(d?: string | Date) {
   if (!d) return null;
@@ -29,6 +42,35 @@ async function absoluteURL(path: string) {
   return `${proto}://${host}${path}`;
 }
 
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const post = await getUpdatePostBySlug(params.slug);
+  if (!post) return {};
+  const img = urlFromAsset(post.fields.coverImage);
+  const description = extractPlainText(post.fields.content, 180) || post.fields.title;
+  const title = post.fields.title;
+  const canonical = await absoluteURL(`/stories/${params.slug}`);
+  const images = img ? [{ url: `${img}?w=1200&h=630&fit=fill&fm=jpg&q=85`, width: 1200, height: 630, alt: title }] : [];
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: 'article',
+      images,
+      siteName: 'Project REACH'
+    },
+    twitter: {
+      card: images.length ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      images: images.map(i => i.url),
+    }
+  } as any;
+}
+
 export default async function StoryDetail({ params }: { params: { slug: string } }) {
   const post = await getUpdatePostBySlug(params.slug);
   if (!post) return notFound();
@@ -38,6 +80,7 @@ export default async function StoryDetail({ params }: { params: { slug: string }
   const date = formatDate(post.sys?.updatedAt);
   const location = post.fields?.location as string | undefined;
   const canonical = await absoluteURL(`/stories/${params.slug}`);
+  const description = extractPlainText(post.fields.content, 180) || post.fields.title;
 
   return (
     <StyledContainer>
@@ -99,7 +142,7 @@ export default async function StoryDetail({ params }: { params: { slug: string }
             </div>
 
             {/* actions */}
-            <ShareRow canonical={canonical} />
+            <ShareRow canonical={canonical} title={post.fields.title} description={description} image={img ? `${img}?w=1200&h=630&fit=fill&fm=jpg&q=85` : undefined} />
           </article>
         </main>
       </GlassCard>
