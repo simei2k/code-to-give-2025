@@ -5,15 +5,12 @@ import Image from "next/image";
 
 interface PostItem {
   sys: { id: string };
-  fields: {
-    slug: string;
-    title: string;
-    coverImage?: any;
-  };
+  fields: { slug: string; title: string; coverImage?: any };
 }
 
 const urlFromAsset = (asset?: any) => {
-  const u = asset?.fields?.file?.url; return u ? (u.startsWith("//") ? `https:${u}` : u) : "";
+  const u = asset?.fields?.file?.url;
+  return u ? (u.startsWith("//") ? `https:${u}` : u) : "";
 };
 
 interface StoriesCarouselProps {
@@ -21,43 +18,69 @@ interface StoriesCarouselProps {
   intervalMs?: number;
 }
 
-// Lightweight auto-advancing horizontal carousel preserving existing card styles.
 export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCarouselProps) {
   const listRef = useRef<HTMLUListElement | null>(null);
   const cardWidthRef = useRef(0);
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
 
   const scrollByCards = useCallback((dir: 1 | -1) => {
-    const el = listRef.current; if (!el) return;
+    const el = listRef.current;
+    if (!el) return;
     const w = cardWidthRef.current || el.clientWidth;
-    const target = el.scrollLeft + dir * w;
-    el.scrollTo({ left: target, behavior: 'smooth' });
+    el.scrollTo({ left: el.scrollLeft + dir * (w + 24 /* gap */), behavior: "smooth" });
   }, []);
 
+  // Measure the first slide width and update on resize/breakpoints
   useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+
     const measure = () => {
-      if (listRef.current?.firstElementChild) {
-        cardWidthRef.current = (listRef.current.firstElementChild as HTMLElement).offsetWidth;
+      const firstSlide = el.querySelector<HTMLElement>("li[data-slide]");
+      if (firstSlide) {
+        const rect = firstSlide.getBoundingClientRect();
+        cardWidthRef.current = Math.round(rect.width);
       }
     };
+
+    // initial
     measure();
+
+    // keep in sync with responsive width changes
+    roRef.current = new ResizeObserver(measure);
+    roRef.current.observe(el);
+
+    // also re-measure on window resize (safety)
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+
+    return () => {
+      window.removeEventListener("resize", measure);
+      roRef.current?.disconnect();
+      roRef.current = null;
+    };
   }, [posts]);
 
+  // Auto-advance
   useEffect(() => {
     if (!posts?.length) return;
-    const el = listRef.current; if (!el) return;
+    const el = listRef.current;
+    if (!el) return;
+
     autoTimer.current = setInterval(() => {
       const w = cardWidthRef.current || el.clientWidth;
-      const max = el.scrollWidth - el.clientWidth;
-      if (el.scrollLeft + w + 8 >= max) {
-        el.scrollTo({ left: 0, behavior: 'smooth' });
+      const step = w + 24 /* gap-6 = 1.5rem = 24px */;
+      const max = el.scrollWidth - el.clientWidth - 2; // pad for float errors
+      if (el.scrollLeft + step >= max) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
       } else {
-        el.scrollBy({ left: w, behavior: 'smooth' });
+        el.scrollBy({ left: step, behavior: "smooth" });
       }
     }, intervalMs);
-    return () => { if (autoTimer.current) clearInterval(autoTimer.current); };
+
+    return () => {
+      if (autoTimer.current) clearInterval(autoTimer.current);
+    };
   }, [posts, intervalMs]);
 
   if (!posts?.length) return null;
@@ -72,8 +95,9 @@ export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCar
         className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 border border-[#006e34]/30 text-[#006e34] shadow hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
       >
         <span className="sr-only">Previous</span>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
       </button>
+
       {/* Right Arrow */}
       <button
         type="button"
@@ -82,31 +106,59 @@ export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCar
         className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/80 border border-[#006e34]/30 text-[#006e34] shadow hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
       >
         <span className="sr-only">Next</span>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
       </button>
+
+      {/* Scroller */}
       <ul
         ref={listRef}
-        className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [&::-webkit-scrollbar]:hidden -mx-2 px-2" style={{ scrollbarWidth: 'none' }}
+        className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-2 px-2 [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: "none" }}
       >
-        {posts.map(p => {
-          const img = urlFromAsset(p.fields.coverImage);
-          const href = `/stories/${p.fields.slug}`;
+        {posts.map((post) => {
+          const img = urlFromAsset(post.fields.coverImage);
+          const href = `/stories/${post.fields.slug}`;
           return (
-            <li key={p.sys.id} className="snap-start flex-shrink-0 w-72 md:w-[28rem]">
-              <Link href={href} className="group block rounded-xl border border-[#006e34]/10 bg-white shadow-sm hover:shadow-md transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34] h-full">
-                <div className="p-4">
-                  {img && (
-                    <div className="relative w-full aspect-[16/9] mb-3 overflow-hidden rounded-lg">
-                      <Image
-                        src={`${img}?w=1200&h=675&fit=fill&fm=jpg&q=80`}
-                        alt={p.fields.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                        sizes="(max-width: 768px) 80vw, 600px"
-                      />
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-lg leading-snug text-gray-900">{p.fields.title}</h3>
+            <li
+              key={post.sys.id}
+              data-slide
+              className="flex-none snap-start w-[300px] sm:w-[360px] lg:w-[420px]"
+            >
+              <Link
+                href={href}
+                className="group block h-full overflow-hidden rounded-xl border border-[#006e34]/10 bg-white shadow-sm transition-all hover:-translate-y-0.3 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
+              >
+                {/* image */}
+                {img ? (
+                  <div className="relative aspect-[16/9] w-full">
+                    <Image
+                      src={`${img}?w=1200&h=675&fit=fill&fm=jpg&q=80`}
+                      alt={post.fields.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[16/9] items-center justify-center bg-[#f7ffe9] text-sm text-[#527e6a]">
+                    Photo coming soon
+                  </div>
+                )}
+
+                {/* content */}
+                <div className="p-4 flex flex-col">
+                  <h4 className="line-clamp-2 text-lg font-semibold leading-snug text-gray-900">
+                    {post.fields.title}
+                  </h4>
+                  {/* spacer so buttons/arrow line stays aligned if you add more meta later */}
+                  <div className="mt-3 flex items-center justify-between">
+                    <span
+                      aria-hidden
+                      className="translate-x-0 text-[#0f5132] transition-all"
+                    >
+                      Read more →
+                    </span>
+                  </div>
                 </div>
               </Link>
             </li>
