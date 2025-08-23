@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface LiveCounterProps {
   end: number;
@@ -7,27 +7,61 @@ interface LiveCounterProps {
   durationMs?: number;
 }
 
-export default function LiveCounter({ end, prefix = "", durationMs = 2000 }: LiveCounterProps) {
+export default function LiveCounter({
+  end,
+  prefix = "",
+  durationMs = 2000,
+}: LiveCounterProps) {
   const [value, setValue] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
-    let start = 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+        }
+      },
+      {
+        threshold: 0.6,
+      }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, [hasAnimated]);
+
+  useEffect(() => {
+    if (!hasAnimated) return;
+
+    let current = 0;
     const step = Math.ceil(end / (durationMs / 16));
+
     const interval = setInterval(() => {
-      start += step;
-      if (start >= end) {
+      current += step;
+      if (current >= end) {
         setValue(end);
         clearInterval(interval);
       } else {
-        setValue(start);
+        setValue(current);
       }
     }, 16);
+
     return () => clearInterval(interval);
-  }, [end, durationMs]);
+  }, [hasAnimated, end, durationMs]);
 
   return (
-    <span className="tabular-nums font-bold text-4xl md:text-6xl">
-      {prefix}{value.toLocaleString()}
+    <span ref={ref} className="tabular-nums">
+      {prefix}
+      {value.toLocaleString()}
     </span>
   );
 }
