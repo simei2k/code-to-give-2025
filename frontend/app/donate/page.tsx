@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Box, Typography, Slider, TextField, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, IconButton, InputAdornment, Stepper, Step, StepLabel } from "@mui/material";
+import { Box, Typography, Slider, Button, TextField, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, IconButton, InputAdornment, Stepper, Step, StepLabel } from "@mui/material";
 import { Visibility, VisibilityOff, Close } from '@mui/icons-material';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -847,7 +847,7 @@ export default function DonatePage() {
             {/* Donate Button */}
             <Fade in timeout={1700}>
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
-                <Button 
+                <NewButton 
                   disabled={!region || !school}
                   onClick={() => setDialogOpen(true)}
                   className="w-full"
@@ -855,7 +855,7 @@ export default function DonatePage() {
                 >
                   {region && school ? `Donate ${displayAmount} Now 🚀` : 'Select Region & School'}
            
-                </Button>
+                </NewButton>
               </Box>
             </Fade>
 

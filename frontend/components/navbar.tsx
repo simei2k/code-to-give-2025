@@ -4,7 +4,7 @@ import Link from "next/link";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { FaInstagram, FaTiktok, FaFacebook } from "react-icons/fa6";
-import Button from "./NewButton";
+import NewButton from "./NewButton";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
@@ -86,9 +86,9 @@ export default function Navbar() {
                 Stories
               </Link>
               <Link href="/donate" className="text-gray-700 hover:text-green-600 font-medium transition-colors mb-1">
-                <Button>
+                <NewButton>
                   Donate
-                </Button>
+                </NewButton>
               </Link>
               {!user ? (
                 <Link
