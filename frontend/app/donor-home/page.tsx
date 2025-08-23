@@ -340,12 +340,25 @@ export default function DonorDashboard() {
     <StyledContainer>
       <GlassCard elevation={0}>
       {/* Giving Stats */}
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: "bold", mb: 2, color: "#333", textAlign: "center" }}
+      <section
+        className="text-center mb-10 px-6"
+        aria-labelledby="giving-stats-heading"
       >
-        Your Giving Stats
-      </Typography>
+        <span className="inline-flex items-center justify-center rounded-full border border-[#006e34]/20 bg-white/70 px-3 py-1 text-xs font-semibold text-[#006e34] shadow-sm">
+          💚 Donor Dashboard
+        </span>
+
+        <h1
+          id="giving-stats-heading"
+          className="mt-4 text-3xl sm:text-5xl font-extrabold tracking-tight text-[#006e34]"
+        >
+          Your Giving Stats
+        </h1>
+
+        <p className="mx-auto mt-3 max-w-2xl text-sm sm:text-base text-gray-700">
+          See your impact over time—totals, milestones, and badges, all in one place.
+        </p>
+      </section>
 
       <StatCard>
         <Typography variant="h6" color="textSecondary" sx={{ mb: 1 }}>
