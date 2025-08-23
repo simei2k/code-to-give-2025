@@ -4,7 +4,7 @@ import Link from "next/link";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { FaInstagram, FaTiktok, FaFacebook } from "react-icons/fa6";
-import Button from "./Button";
+import Button from "./NewButton";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);

@@ -9,7 +9,7 @@ export interface ButtonProps
   disabled?: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({
+const NewButton: React.FC<ButtonProps> = ({
   children,
   onClick,
   className,
@@ -50,4 +50,4 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-export default Button;
+export default NewButton;
