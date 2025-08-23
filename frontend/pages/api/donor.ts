@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
@@ -99,8 +100,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ donor: shapeForApi(docSnap.id, data) });
     }
 
+    if (req.method === "PUT") {
+      const { email, amount } = req.body;
+
+      // Validate required fields
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email is required and must be a string" });
+      }
+
+      if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+        return res.status(400).json({ error: "Amount is required and must be a positive number" });
+      }
+
+      const donationAmount = Number(amount);
+
+      // Find donor by email
+      const donorsRef = collection(db, "donors");
+      const q = query(donorsRef, where("email", "==", email.trim()), limit(1));
+      const result = await getDocs(q);
+
+      if (result.empty) {
+        return res.status(404).json({ error: "Donor not found with this email" });
+      }
+
+      const docSnap = result.docs[0];
+      const donorData = coerceToSchema(docSnap.data());
+      const currentTotal = donorData.totalDonated;
+      const newTotal = currentTotal + donationAmount;
+
+      // Update the donor's totalDonated
+      await updateDoc(doc(db, "donors", docSnap.id), {
+        totalDonated: newTotal,
+        updatedAt: serverTimestamp(),
+      });
+
+      // Return updated donor data
+      const updatedDonor = {
+        ...donorData,
+        totalDonated: newTotal,
+      };
+
+      return res.status(200).json({
+        message: "Donation amount updated successfully",
+        donor: shapeForApi(docSnap.id, updatedDonor),
+        previousTotal: currentTotal,
+        newTotal: newTotal,
+        amountAdded: donationAmount,
+      });
+    }
+
     // Method not allowed
-    res.setHeader("Allow", "GET, POST");
+    res.setHeader("Allow", "GET, PUT");
     return res.status(405).json({ error: "Method Not Allowed" });
   } catch (err: any) {
     console.error("[pages/api/donor] error", err);
