@@ -1,7 +1,15 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+// lib/firebase.ts
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import {
+  getAuth,
+  browserLocalPersistence,
+  setPersistence,
+  onIdTokenChanged,
+  type User
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,5 +25,16 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
+
+setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+// (Optional) expose a token listener if you want to sync tokens to cookies later
+export function onAuthToken(cb: (user: User | null, token: string | null) => void) {
+  return onIdTokenChanged(auth, async (user) => {
+    if (!user) return cb(null, null);
+    const token = await user.getIdToken(/* forceRefresh? */ false);
+    cb(user, token);
+  });
+}
 
 export { firebaseApp, auth, db, storage };

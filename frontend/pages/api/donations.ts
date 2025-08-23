@@ -22,7 +22,7 @@ export default async function handler(
 
       // Log incoming request for debugging
       console.log("Received donation request:", { 
-        amount: amount !== undefined ? amount : "missing", 
+        amount: amount || "missing", 
         displayName: displayName || "missing",
         email: email || "missing",
         message: message || "missing"

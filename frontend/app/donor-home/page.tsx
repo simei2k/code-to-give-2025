@@ -1,600 +1,606 @@
 "use client";
-import { useEffect, useState } from "react";
+
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
+import { useDonations } from "@/hooks/useDonations";
+
 import {
   Box,
-  Typography,
-  Paper,
   Grid,
-  Divider,
+  Paper,
+  Typography,
+  LinearProgress,
+  Avatar,
+  Stack,
+  Chip,
   Table,
-  TableBody,
-  TableCell,
   TableHead,
   TableRow,
-  Tooltip,
-  LinearProgress,
-  tooltipClasses,
+  TableCell,
+  TableBody,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import {
-  LineChart,
-  Line,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
-import PDFViewer from "@/components/PDFViewer";
+import { CheckCircle2, Gift, Calendar, Target } from "lucide-react";
+import { GlassCard, StyledContainer } from "../donate/page";
+import { useEffect, useState } from "react";
+import { Tooltip as MuiTooltip, tooltipClasses } from "@mui/material";
+import { styled } from "@mui/material/styles";
+
+type DonorProfile = {
+  id: string;
+  displayName: string;
+  email: string;
+  totalDonated: number;
+  badges: string[]; 
+  createdAt: string;
+};
 
 const BadgeTooltip = styled(({ className, ...props }: any) => (
-  <Tooltip {...props} classes={{ popper: className }} />
+  <MuiTooltip {...props} classes={{ popper: className }} />
 ))(() => ({
   [`& .${tooltipClasses.tooltip}`]: {
     backgroundColor: "#fffcec",
-    color: "#006e34",
-    maxWidth: 260,
+    color: "#0F6E35",
+    border: "1px solid #0F6E35",
+    borderRadius: 12,
+    padding: "10px 12px",
     fontSize: "0.85rem",
-    border: "1px solid #006e34",
-    borderRadius: "12px",
-    padding: "12px 16px",
-    boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-    fontWeight: 500,
+    boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
   },
-  [`& .${tooltipClasses.arrow}`]: {
-    color: "#fffcec",
-  },
+  [`& .${tooltipClasses.arrow}`]: { color: "#fffcec" },
 }));
 
-const PageWrapper = styled(Box)({
-  minHeight: "100vh",
-  backgroundColor: "#f9fafb",
-  padding: "40px",
-  fontFamily: "var(--font-inter), sans-serif",
-});
+// ---------- helpers ----------
+function currency(v: number) {
+  return v.toLocaleString("en-SG", {
+    style: "currency",
+    currency: "SGD",
+    maximumFractionDigits: 0,
+  });
+}
 
-const StatCard = styled(Paper, {
-  shouldForwardProp: (prop) => prop !== "centerContent", // 👈 prevent leaking
-})<{ centerContent?: boolean }>(({ centerContent }) => ({
-  padding: "24px",
-  borderRadius: "16px",
-  textAlign: "center",
-  backgroundColor: "#fff",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: centerContent ? "center" : "flex-start",
-  alignItems: "center",
-}));
-
-const StyledContainer = styled(Box)({
-  minHeight: '100vh',
-  background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '20px',
-  fontFamily: 'var(--font-inter), sans-serif',
-});
-
-const GlassCard = styled(Paper)({
-  background: 'rgba(255, 252, 236, 0.95)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '24px',
-  padding: '40px',
-  maxWidth: '1200px',
-  width: '100%',
-  boxShadow: '0 20px 40px rgba(0, 110, 52, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2)',
-  border: '1px solid rgba(0, 110, 52, 0.1)',
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(135deg, rgba(255, 252, 236, 0.8) 0%, rgba(245, 242, 220, 0.6) 100%)',
-    zIndex: -1,
+// parse Firestore Timestamp OR ISO string
+function parseDate(input: any): Date {
+  if (!input) return new Date(NaN);
+  if (typeof input === "string") return new Date(input);
+  if (typeof input === "object" && "seconds" in input) {
+    return new Date((input.seconds as number) * 1000);
   }
-});
-
-export function AnimatedCounter({ value, duration = 1500 }: { value: number; duration?: number }) {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let start = 0;
-    const end = value;
-    if (end === 0) return;
-
-    const frameRate = 30;
-    const totalFrames = Math.round((duration / 1000) * frameRate);
-    const increment = end / totalFrames;
-    let frame = 0;
-
-    const timer = setInterval(() => {
-      frame++;
-      start += increment;
-      if (frame >= totalFrames) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(Math.round(start));
-      }
-    }, 1000 / frameRate);
-
-    return () => clearInterval(timer);
-  }, [value, duration]);
-
-  return <span>{count}</span>;
+  return new Date(input);
 }
 
-export function AnimatedProgress({ value, duration = 1500 }: { value: number; duration?: number }) {
-  const [progress, setProgress] = useState(0);
+// ---------- atoms ----------
+const Card = (p: any) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: 3,
+      borderRadius: 3,
+      bgcolor: "#ffffff",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    }}
+    {...p}
+  />
+);
 
-  useEffect(() => {
-    let start = 0;
-    const end = value;
-    const step = end / (duration / 20);
-
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= end) {
-        setProgress(end);
-        clearInterval(timer);
-      } else {
-        setProgress(start);
-      }
-    }, 20);
-
-    return () => clearInterval(timer);
-  }, [value, duration]);
-
+function Kpi({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
-    <LinearProgress
-      variant="determinate"
-      value={progress}
-      sx={{
-        mt: 2,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: "#e0e0e0",
-        "& .MuiLinearProgress-bar": {
-          backgroundColor: "#006e34",
-        },
+    <Card>
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Avatar
+          sx={{ bgcolor: "#E8F5EC", color: "#0F6E35", width: 48, height: 48 }}
+          variant="rounded"
+        >
+          {icon}
+        </Avatar>
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            {label}
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            {value}
+          </Typography>
+        </Box>
+      </Stack>
+    </Card>
+  );
+}
+
+// helpers (put near the component)
+const compactCurrency = (n: number) =>
+  n >= 1_000_000
+    ? `\$${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000
+    ? `\$${(n / 1_000).toFixed(1)}k`
+    : `\$${Math.round(n)}`;
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}) {
+  if (!active || !payload || !payload.length) return null;
+  const cum = payload.find((p) => p.dataKey === "cumulative")?.value ?? 0;
+  const month = payload.find((p) => p.dataKey === "total")?.value ?? 0;
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        padding: "8px 10px",
+        borderRadius: 8,
+        boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
+        fontSize: 12,
       }}
-    />
+    >
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>Month: {label}</div>
+      <div>Cumulative: <strong>{currency(Number(cum))}</strong></div>
+    </div>
   );
 }
 
-export function AnimatedDonationGraph({ data }: { data: { month: string; cumulative: number }[] }) {
-  const [animatedData, setAnimatedData] = useState<{ month: string; cumulative: number }[]>([]);
+
+const allBadges = [
+  {
+    id: "planting-seeds",
+    label: "🌱 Planting Seeds",
+    description: "You earned this badge for making your very first donation — planting the seed of change.",
+    condition: (stats: any) => stats.numberOfDonations >= 1,
+  },
+  {
+    id: "bright-future-builder",
+    label: "🌞 Bright Future Builder",
+    description: "You earned this badge for making your second donation — building momentum for brighter futures.",
+    condition: (stats: any) => stats.numberOfDonations >= 2,
+  },
+  {
+    id: "rule-of-3",
+    label: "🔺 Rule of 3",
+    description: "You earned this badge for making 3 donations — proving good things come in threes.",
+    condition: (stats: any) => stats.numberOfDonations >= 3,
+  },
+  {
+    id: "high-five-hero",
+    label: "🖐 High Five Hero",
+    description: "Make 5 donations — high five to your generosity!",
+    condition: (stats: any) => stats.numberOfDonations >= 5,
+  },
+  {
+    id: "perfect-10",
+    label: "💯 Perfect 10",
+    description: "Make 10 donations — a perfect score in kindness.",
+    condition: (stats: any) => stats.numberOfDonations >= 10,
+  },
+  {
+    id: "harbour-light",
+    label: "🌃 Harbour Light",
+    description: "Donate over $500 in total — your generosity shines like the harbour lights.",
+    condition: (stats: any) => stats.totalDonated > 500,
+  },
+  {
+    id: "dream-unlocker",
+    label: "🔓 Dream Unlocker",
+    description: "Donate over $1000 in total — unlocking dreams for children in need.",
+    condition: (stats: any) => stats.totalDonated > 1000,
+  },
+  {
+    id: "smiles-creator",
+    label: "😁 Smiles Creator",
+    description: "Make a single donation of over $500 — creating countless smiles.",
+    condition: (stats: any) => stats.largestDonation > 500,
+  },
+  {
+    id: "future-builder",
+    label: "🏗 Bright Future Builder",
+    description: "Make a single donation of over $800 — helping build brighter futures.",
+    condition: (stats: any) => stats.largestDonation > 800,
+  },
+  {
+    id: "scholarship-builder",
+    label: "🎓 Scholarship Builder",
+    description: "Make a single donation of over $1200 — paving the way for scholarships.",
+    condition: (stats: any) => stats.largestDonation > 1200,
+  },
+  {
+    id: "full-attendance",
+    label: "📅 Full Attendance",
+    description: "Donating every month for a year — showing up like a star student.",
+    condition: (stats: any) => stats.monthlyStreak >= 12,
+  },
+  {
+    id: "shum-shui-po",
+    label: "📍 Shum Shui Po",
+    description: "You earn this badge by making a donation to Shum Shui Po.",
+    condition: () => false,
+  },
+  {
+    id: "kwai-tsing",
+    label: "📍 Kwai Tsing",
+    description: "You earn this badge by making a donation to Kwai Tsing.",
+    condition: () => false,
+  },
+  {
+    id: "kwun-tong",
+    label: "📍 Kwun Tong",
+    description: "You earn this badge by making a donation to Kwai Tsing.",
+    condition: () => false,      
+  },
+  {
+    id: "secret-1",
+    label: "❓ Secret Badge 1",
+    description: "This is a hidden badge… keep donating and you may unlock it!",
+    condition: () => false,
+    secret: true,
+  },
+  {
+    id: "secret-2",
+    label: "❓ Secret Badge 2",
+    description: "Another hidden badge… only the most generous donors will see this unlocked.",
+    condition: () => false,
+    secret: true,
+  },
+];
+
+// nice green palette for charts
+const GREEN = "#0F6E35";
+const GREENS = ["#0F6E35", "#3FA35E", "#7BC99B", "#B7E3C9", "#DFF3E7"];
+
+export default function Dashboard() {
+  const [user, loadingAuth] = useAuthState(auth);
+  const email = user?.email ?? undefined;
+  const donorId = user?.uid ?? null;
+  const [donorProfile, setDonorProfile] = useState<DonorProfile | null>(null);
+  const [badgesLoading, setBadgesLoading] = useState(true);
 
   useEffect(() => {
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < data.length) {
-        setAnimatedData((prev) => [...prev, data[i]]);
-        i++;
-      } else {
-        clearInterval(timer);
-      }
-    }, 800); // adds one point every 0.8s
-    return () => clearInterval(timer);
-  }, [data]);
+    if (!donorId && !email) return;
+    let mounted = true;
+    setBadgesLoading(true);
+    const qs = new URLSearchParams(donorId ? { id: donorId } : { email: email! }).toString();
+    fetch(`/api/donor?${qs}`, { cache: "no-store" })
+      .then(async (r) => (r.ok ? r.json() : Promise.reject(await r.text())))
+      .then((json) => { if (mounted) setDonorProfile(json.donor as DonorProfile); })
+      .catch(() => { if (mounted) setDonorProfile(null); })
+      .finally(() => mounted && setBadgesLoading(false));
+    return () => { mounted = false; };
+  }, [donorId, email]);
 
-  return (
-    <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={animatedData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" />
-        <YAxis tickFormatter={(val) => `$${val}`} domain={[0, 600]} />
-        <RechartsTooltip formatter={(val) => [`$${val}`, "Cumulative Donations"]} />
-        <Line
-          type="monotone"
-          dataKey="cumulative"
-          stroke="#006e34"
-          strokeWidth={3}
-          dot={{ r: 5 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  );
-}
+  const { loading, error, donations, stats } = useDonations(email, donorId);
 
-export default function DonorDashboard() {
-  const [user, loading] = useAuthState(auth);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  if (loadingAuth) return null;
+  if (!user) {
+    if (typeof window !== "undefined") window.location.href = "/login";
+    return null;
+  }
 
-  useEffect(() => {
-    if (!loading && !user) {
-      window.location.href = "/login";
-    }
-  }, [user, loading]);
+  // milestone ring math
+  const nextMilestone = Math.max(500, Math.ceil(stats.total / 500) * 500 || 500);
+  const pct = Math.min(100, (stats.total / nextMilestone) * 100);
 
-  if (!user) return null;
+  // chart data (safe default)
+  const areaData =
+    stats.byMonth.length > 0
+      ? stats.byMonth
+      : [{ label: "—", total: 0, cumulative: 0 }];
 
-  const numberOfDonations = 3;
-  const totalDonated = 425;
-  const nextMilestone = 500;
-  const childrenImpacted = 24;
+  // pie data needs colors
+  const pieData = stats.byDistrict.length
+    ? stats.byDistrict
+    : [{ district: "—", total: 1, count: 0 }];
 
-  const allBadges = [
-    {
-      id: "planting-seeds",
-      label: "🌱 Planting Seeds",
-      description: "You earned this badge for making your very first donation — planting the seed of change.",
-      condition: (stats: any) => stats.numberOfDonations >= 1,
-    },
-    {
-      id: "bright-future-builder",
-      label: "🌞 Bright Future Builder",
-      description: "You earned this badge for making your second donation — building momentum for brighter futures.",
-      condition: (stats: any) => stats.numberOfDonations >= 2,
-    },
-    {
-      id: "rule-of-3",
-      label: "🔺 Rule of 3",
-      description: "You earned this badge for making 3 donations — proving good things come in threes.",
-      condition: (stats: any) => stats.numberOfDonations >= 3,
-    },
-    {
-      id: "high-five-hero",
-      label: "🖐 High Five Hero",
-      description: "Make 5 donations — high five to your generosity!",
-      condition: (stats: any) => stats.numberOfDonations >= 5,
-    },
-    {
-      id: "perfect-10",
-      label: "💯 Perfect 10",
-      description: "Make 10 donations — a perfect score in kindness.",
-      condition: (stats: any) => stats.numberOfDonations >= 10,
-    },
-    {
-      id: "harbour-light",
-      label: "🌃 Harbour Light",
-      description: "Donate over $500 in total — your generosity shines like the harbour lights.",
-      condition: (stats: any) => stats.totalDonated > 500,
-    },
-    {
-      id: "dream-unlocker",
-      label: "🔓 Dream Unlocker",
-      description: "Donate over $1000 in total — unlocking dreams for children in need.",
-      condition: (stats: any) => stats.totalDonated > 1000,
-    },
-    {
-      id: "smiles-creator",
-      label: "😁 Smiles Creator",
-      description: "Make a single donation of over $500 — creating countless smiles.",
-      condition: (stats: any) => stats.largestDonation > 500,
-    },
-    {
-      id: "future-builder",
-      label: "🏗 Bright Future Builder",
-      description: "Make a single donation of over $800 — helping build brighter futures.",
-      condition: (stats: any) => stats.largestDonation > 800,
-    },
-    {
-      id: "scholarship-builder",
-      label: "🎓 Scholarship Builder",
-      description: "Make a single donation of over $1200 — paving the way for scholarships.",
-      condition: (stats: any) => stats.largestDonation > 1200,
-    },
-    {
-      id: "full-attendance",
-      label: "📅 Full Attendance",
-      description: "Donating every month for a year — showing up like a star student.",
-      condition: (stats: any) => stats.monthlyStreak >= 12,
-    },
-    {
-      id: "shum-shui-po",
-      label: "📍 Shum Shui Po",
-      description: "You earn this badge by making a donation to Shum Shui Po.",
-      condition: () => false,
-    },
-    {
-      id: "kwai-tsing",
-      label: "📍 Kwai Tsing",
-      description: "You earn this badge by making a donation to Kwai Tsing.",
-      condition: () => false,
-    },
-    {
-      id: "kwun-tong",
-      label: "📍 Kwun Tong",
-      description: "You earn this badge by making a donation to Kwai Tsing.",
-      condition: () => false,      
-    },
-    {
-      id: "secret-1",
-      label: "❓ Secret Badge 1",
-      description: "This is a hidden badge… keep donating and you may unlock it!",
-      condition: () => false,
-      secret: true,
-    },
-    {
-      id: "secret-2",
-      label: "❓ Secret Badge 2",
-      description: "Another hidden badge… only the most generous donors will see this unlocked.",
-      condition: () => false,
-      secret: true,
-    },
-  ];
-  
-  const donationHistory = [
-    { amount: 100, date: "2025-01-16", status: "Completed" },
-    { amount: 100, date: "2025-02-01", status: "Completed" },
-    { amount: 25,  date: "2025-03-19", status: "Completed" },
-    { amount: 75,  date: "2025-04-23", status: "Completed" },
-  ];
-
-  const baseData = [
-    { month: "Jan", cumulative: 100 },
-    { month: "Feb", cumulative: 200 },
-    { month: "Mar", cumulative: 225 },
-    { month: "Apr", cumulative: 300 },
-  ];
 
   return (
     <StyledContainer>
-      <GlassCard elevation={0}>
-      {/* Giving Stats */}
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: "bold", mb: 2, color: "#333", textAlign: "center" }}
-      >
-        Your Giving Stats
-      </Typography>
-
-      <StatCard>
-        <Typography variant="h6" color="textSecondary" sx={{ mb: 1 }}>
-          Lifetime Donations
+      <GlassCard>
+    <Box sx={{ minHeight: "100vh", p: { xs: 2, md: 4 } }}>
+      {/* header */}
+      <Box sx={{ textAlign: "center", mb: 3 }}>
+        <Chip
+          label="💚 Donor Dashboard"
+          sx={{
+            bgcolor: "#E8F5EC",
+            color: GREEN,
+            fontWeight: 700,
+            borderRadius: "999px",
+          }}
+        />
+        <Typography
+          variant="h3"
+          sx={{ mt: 2, fontWeight: 900, color: GREEN, lineHeight: 1.1 }}
+        >
+          Your Giving Summary
         </Typography>
-        <Box sx={{ width: "100%", height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={baseData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis tickFormatter={(val) => `$${val}`} domain={[0, 600]} />
-              <RechartsTooltip formatter={(val) => [`$${val}`, "Cumulative Donations"]} />
-              <Line
-                type="monotone"
-                dataKey="cumulative"
-                stroke="#006e34"
-                strokeWidth={3}
-                dot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
-        <Box sx={{ width: "100%", mt: 2 }}>
-          <AnimatedProgress value={(totalDonated / nextMilestone) * 100} />
-        </Box>
-        <Typography variant="body2" sx={{ mt: 1, color: "#777" }}>
-          Next goal: ${nextMilestone} (only ${nextMilestone - totalDonated} left!)
+        <Typography variant="body1" sx={{ color: "text.secondary", mt: 0.5 }}>
+          Thank you, {user.displayName || user.email}! Here’s your impact at a
+          glance.
         </Typography>
-      </StatCard>
+      </Box>
 
-      <Box sx={{ mt: 4, display: "flex", justifyContent: "center", width: "100%" }}>
-        <Grid container spacing={3} sx={{ mb: 6, maxWidth: "1200px" }}>
+      <Box sx={{ py: 4, px: 2 }}>
+        <Grid
+          container
+          spacing={3}
+          justifyContent="center"
+          alignItems="center"
+        >
           <Grid item xs={12} md={3}>
-            <StatCard centerContent>
-              <Typography variant="h4" color="primary">
-                <AnimatedCounter value={numberOfDonations} />
-              </Typography>
-              <Typography variant="body1" color="textSecondary">
-                Number of Donations
-              </Typography>
-            </StatCard>
-          </Grid>    
-
-          <Grid item xs={12} md={3}>
-            <StatCard centerContent>
-              <Typography variant="h4" color="primary">
-                <AnimatedCounter value={childrenImpacted} />
-              </Typography>
-              <Typography variant="body1" color="textSecondary">
-                Children Impacted
-              </Typography>
-            </StatCard>
+            <Kpi
+              icon={<CheckCircle2 />}
+              label="Total Donated"
+              value={currency(stats.total)}
+            />
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <StatCard 
-              centerContent 
-              onClick={() => setIsPopupOpen(true)}
-              sx={{ 
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
-                }
-              }}
-            >
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  color: '#006e34',
-                  fontWeight: 'bold',
-                  mb: 0.5,
-                  fontSize: { xs: '1.2rem', md: '1.4rem' }
-                }}
-              >
-                Your Impact! ➡️
-              </Typography>
-            </StatCard>
+            <Kpi
+              icon={<Gift />}
+              label="Donations"
+              value={String(stats.count)}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={3}>
+            <Kpi
+              icon={<Target />}
+              label="Largest Single Gift"
+              value={currency(stats.largest)}
+            />
           </Grid>
         </Grid>
       </Box>
 
-      {/* Badges Section */}
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: "bold", mb: 2, color: "#333", textAlign: "center" }}
-      >
-        Badges Collected
-      </Typography>
-
-      <Box sx={{ display: "flex", justifyContent: "center", width: "100%", mb: 6 }}>
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            flexWrap: "wrap",
-            justifyContent: "center",
-            maxWidth: "1000px",
-          }}
-        >
-          {allBadges.map((badge) => {
-            const unlocked = badge.condition({
-              numberOfDonations,
-              totalDonated,
-              largestDonation: 425,
-              monthlyStreak: 3,
-            });
-
-            return (
-              <BadgeTooltip
-                key={badge.id}
-                title={badge.description}
-                arrow
-                placement="top"
-              >
-                <Paper
-                  sx={{
-                    px: 3,
-                    py: 2,
-                    borderRadius: "12px",
-                    backgroundColor: unlocked ? "#fffcec" : "#f0f0f0",
-                    border: "1px solid #006e34",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: unlocked ? "#006e34" : "#999",
-                    opacity: unlocked ? 1 : 0.6,
-                    minWidth: "200px",
-                    cursor: "pointer",
-                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-                    },
-                  }}
+      
+      <Grid>
+        {/* Area chart */}
+        <Grid item xs={12} md={8} sx={{ mb: 3 }}>
+          <Card>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+              Cumulative Over Time
+            </Typography>
+            <Box sx={{ width: "100%", height: 300 }}>
+              <ResponsiveContainer>
+                <AreaChart
+                  data={areaData} // expects { label, total, cumulative }
+                  margin={{ top: 10, right: 16, bottom: 0, left: 0 }}
                 >
-                  {badge.label}
-                </Paper>
-              </BadgeTooltip>
-            );
-          })}
-        </Box>
-      </Box>
+                  <defs>
+                    {/* cumulative fill */}
+                    <linearGradient id="gCum" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={GREEN} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={GREEN} stopOpacity={0.04} />
+                    </linearGradient>
+                    {/* monthly total fill (lighter) */}
+                    <linearGradient id="gMon" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={GREEN} stopOpacity={0.18} />
+                      <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
 
-      {/* Donation History */}
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: "bold", mb: 2, color: "#333" }}
-      >
-        Recent Donations
-      </Typography>
-      <Paper sx={{ overflowX: "auto" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Donation</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {donationHistory.map((don, i) => (
-              <TableRow key={i}>
-                <TableCell>${don.amount}</TableCell>
-                <TableCell>{don.date}</TableCell>
-                <TableCell>{don.status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
-      </GlassCard>
+                  <CartesianGrid stroke="#e5e7eb" strokeOpacity={0.6} />
+                  <XAxis
+                    dataKey="label"
+                    tickMargin={8}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v) => compactCurrency(Number(v))}
+                    width={56}
+                    tickMargin={8}
+                    axisLine={false}
+                    tickLine={false}
+                  />
 
-      {/* Popup Window */}
-      {isPopupOpen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-          onClick={() => setIsPopupOpen(false)}
-        >
-          <Box
-            sx={{
-              background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)',
-              width: '95%',
-              maxWidth: '1200px',
-              minHeight: '94vh',
-              borderRadius: '24px 24px 0 0',
-              padding: '40px',
-              transform: isPopupOpen ? 'translateY(0)' : 'translateY(100%)',
-              transition: 'transform 0.3s ease-out',
-              animation: 'slideUp 0.3s ease-out',
-              '@keyframes slideUp': {
-                from: {
-                  transform: 'translateY(100%)',
-                },
-                to: {
-                  transform: 'translateY(0)',
-                },
-              },
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-              <Box
-                component="button"
-                onClick={() => setIsPopupOpen(false)}
-                sx={{
-                  background: 'rgba(0, 110, 52, 0.1)',
-                  border: 'none',
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  color: '#006e34',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    background: 'rgba(0, 110, 52, 0.2)',
-                    transform: 'scale(1.1)',
-                  },
-                }}
-              >
-                ✕
-              </Box>
+                  <RechartsTooltip content={<CustomTooltip />} />
+
+                  {/* Cumulative (primary) */}
+                  <Area
+                    type="monotone"
+                    dataKey="cumulative"
+                    stroke={GREEN}
+                    fill="url(#gCum)"
+                    strokeWidth={3}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {/* Optional zoom/scroll for long ranges (desktop only) */}
+                  {/* Uncomment if you expect many months:
+                  <Brush height={16} travellerWidth={8} />
+                  */}
+                </AreaChart>
+              </ResponsiveContainer>
             </Box>
 
-            {/* Popup content */}
-            <PDFViewer storagePath="newsletter/" />
-            
-          </Box>
-        </Box>
-      )}
+          </Card>
+        </Grid>
 
+        {/* Badges Section */}
+        <Grid item xs={12} md={4} sx={{ mb: 3 }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: "bold", mb: 2, color: "#333", textAlign: "center" }}
+          >
+            Badges Collected
+          </Typography>
+
+          {badgesLoading ? (
+            <Typography color="text.secondary" align="center">Loading badges…</Typography>
+          ) : !donorProfile ? (
+            <Typography color="text.secondary" align="center">No donor profile found.</Typography>
+          ) : (
+            (() => {
+              const unlockedSet = new Set(donorProfile.badges ?? []);
+              const unlocked = allBadges.filter(b => unlockedSet.has(b.id));
+              const locked   = allBadges.filter(b => !unlockedSet.has(b.id));
+
+              return (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {/* Unlocked */}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
+                    {unlocked.length === 0 ? (
+                      <Typography color="text.secondary">No badges yet — your first is just one gift away 🌱</Typography>
+                    ) : (
+                      unlocked.map((badge) => (
+                        <BadgeTooltip key={badge.id} title={badge.description} arrow placement="top">
+                          <Paper
+                            sx={{
+                              px: 2.5, py: 1.5, borderRadius: 2,
+                              backgroundColor: "#fffcec",
+                              border: "1px solid #0F6E35",
+                              color: "#0F6E35",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {badge.label}
+                          </Paper>
+                        </BadgeTooltip>
+                      ))
+                    )}
+                  </Box>
+
+                  {/* Divider text */}
+                  <Typography variant="caption" align="center" sx={{ color: "text.secondary", mt: 1 }}>
+                    {unlocked.length} unlocked · {locked.length} locked
+                  </Typography>
+
+                  {/* Locked (muted style) */}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
+                    {locked.map((badge) => (
+                      <BadgeTooltip key={badge.id} title={badge.description} arrow placement="top">
+                        <Paper
+                          sx={{
+                            px: 2.5, py: 1.5, borderRadius: 2,
+                            backgroundColor: "#f5f5f5",
+                            border: "1px solid #d6d6d6",
+                            color: "#9e9e9e",
+                            fontWeight: 500,
+                            opacity: 0.8,
+                          }}
+                        >
+                          {badge.label}
+                        </Paper>
+                      </BadgeTooltip>
+                    ))}
+                  </Box>
+                </Box>
+              );
+            })()
+          )}
+        </Grid>
+
+        {/* District distribution */}
+        <Grid item xs={12} md={5} sx={{ mb: 3 }}>
+          <Card>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+              By District
+            </Typography>
+            <Box sx={{ height: 260 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="total"
+                    nameKey="district"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={GREENS[i % GREENS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend />
+                  <RechartsTooltip formatter={(v, n, e) => [currency(Number(v)), e.payload.district]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+          </Card>
+        </Grid>
+
+        {/* Recent donations */}
+        <Grid item xs={12} md={7} sx={{ mb: 3 }}>
+          <Card>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+              Recent Donations
+            </Typography>
+
+            {loading ? (
+              <Typography color="text.secondary">Loading…</Typography>
+            ) : error ? (
+              <Typography color="error.main">{error}</Typography>
+            ) : donations.length === 0 ? (
+              <Typography color="text.secondary">No donations yet.</Typography>
+            ) : (
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>District</TableCell>
+                    <TableCell>School</TableCell>
+                    <TableCell>Message</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {[...donations]
+                    .sort(
+                      (a, b) =>
+                        parseDate(b.createdAt).getTime() -
+                        parseDate(a.createdAt).getTime()
+                    )
+                    .slice(0, 8)
+                    .map((d, i) => (
+                      <TableRow key={i} hover>
+                        <TableCell>{currency(Number(d.amount))}</TableCell>
+                        <TableCell>
+                          {parseDate(d.createdAt).toLocaleString("en-SG", {
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                          })}
+                        </TableCell>
+                        <TableCell>{(d as any).district || "-"}</TableCell>
+                        <TableCell>{(d as any).school || "-"}</TableCell>
+                        <TableCell>{d.message}</TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+    </GlassCard>
     </StyledContainer>
   );
 }
+
