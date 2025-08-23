@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Open_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
-import { GlassCard, StyledContainer } from "./donate/page";
 
 const inter = Inter({
   variable: "--font-inter",

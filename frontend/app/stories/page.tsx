@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getUpdatePosts } from "@/lib/api"; 
 import HKMapbox from "@/components/HKMapbox";
-import { GlassCard, StyledContainer } from "../donate/page";
+import { GlassCard, StyledContainer } from "@/components/shared-styles";
 
 export const revalidate = 60;
 
