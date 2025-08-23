@@ -160,14 +160,19 @@ const StyledSlider = styled(Slider)({
     opacity: 1,
   },
   '& .MuiSlider-thumb': {
-    height: 32,
-    width: 32,
-    backgroundColor: '#fffcec',
-    border: '4px solid #006e34',
-    boxShadow: '0 6px 12px rgba(0, 110, 52, 0.3)',
+    height: 40,
+    width: 40,
+    backgroundColor: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+    backgroundImage: 'url(/book-custom.svg)',
+    backgroundSize: '40px 40px',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    filter: 'none', // Remove the filter
     '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-      boxShadow: '0 8px 16px rgba(0, 110, 52, 0.4)',
-      border: '4px solid #004d24',
+      boxShadow: '0 0 0 8px rgba(0, 110, 52, 0.16)',
+      border: 'none',
     },
     '&:before': {
       display: 'none',
