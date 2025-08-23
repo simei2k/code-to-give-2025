@@ -5,6 +5,11 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const TARGETS = ["sham shui po", "kwai tsing", "kwun tong"] as const;
 
+type DistrictInfo = {
+  howMuchDonated?: number;
+  schools?: string[];
+};
+
 function nameExpr() {
   return ["downcase", ["coalesce", ["get", "name"], ["get", "DISTRICT"], ["get", "District"], ["get", "dc_name_e"]]];
 }
@@ -38,7 +43,59 @@ const SECTION_IDS: Record<string, string> = {
   "kwai tsing": "kwai-tsing"
 };
 
-export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson" }: { geojsonUrl?: string }) {
+function popupHTML(p: any, info?: { howMuchDonated?: number; schools?: string[] }) {
+  const name =
+    (p.name || p.DISTRICT || p.District || p.dc_name_e || "").toString();
+  const donated = info?.howMuchDonated ?? null;
+  const schools = Array.isArray(info?.schools) ? info!.schools : [];
+
+  const money =
+    typeof donated === "number"
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0,
+        }).format(donated)
+      : null;
+
+  const maxShow = 4;
+  const more = Math.max(0, schools.length - maxShow);
+  const list = schools.slice(0, maxShow);
+
+  return `
+  <div class="hk-pop">
+    <div class="hk-pop__head">
+      <div class="hk-pop__title">${name}</div>
+      ${
+        money
+          ? `<div class="hk-pop__badge" title="Total donated">${money}</div>`
+          : ``
+      }
+    </div>
+
+    ${
+      list.length
+        ? `
+      <div class="hk-pop__section">
+        <div class="hk-pop__label">Supported schools</div>
+        <ul class="hk-pop__list">
+          ${list.map((s) => `<li>•${s}</li>`).join("")}
+          ${
+            more
+              ? `<li class="hk-pop__more">+${more} more</li>`
+              : ``
+          }
+        </ul>
+      </div>`
+        : ``
+    }
+
+    <div class="hk-pop__hint">Click district to jump to details ↓</div>
+  </div>`;
+}
+
+
+export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson", dataUrl="/districts.json" }: { geojsonUrl?: string, dataUrl?: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const hoveredIdRef = useRef<number | string | null>(null);
@@ -56,8 +113,12 @@ export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson" }: { geo
         style: "mapbox://styles/mapbox/light-v11",
         center: [114.1694, 22.3193],
         zoom: 10.8,
-        interactive: false
       });
+
+      map.scrollZoom.disable(); map.boxZoom.disable(); map.dragRotate.disable();
+      map.dragPan.disable(); map.keyboard.disable(); map.doubleClickZoom.disable();
+      map.touchZoomRotate.disable();
+
       mapRef.current = map;
 
       map.on("load", async () => {
@@ -65,6 +126,14 @@ export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson" }: { geo
           const res = await fetch(geojsonUrl, { cache: "no-store" });
           if (!res.ok) throw new Error(`HTTP ${res.status} for ${geojsonUrl}`);
           const geo = await res.json();
+
+          const infoRes = await fetch(dataUrl, { cache: "no-store" });
+          if (!infoRes.ok) throw new Error(`HTTP ${infoRes.status} for ${dataUrl}`);
+          const rawInfo: Record<string, DistrictInfo> = await infoRes.json();
+
+          // Normalize to a Map with lowercase keys
+          const infoMap = new Map<string, DistrictInfo>();
+          Object.entries(rawInfo || {}).forEach(([k, v]) => infoMap.set(k.toLowerCase(), v || {}));
 
           // Decide if we must auto-generate ids
           let useGenerateId = true;
@@ -162,23 +231,44 @@ export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson" }: { geo
           },
           waterId);
 
+          const popup = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: 10,
+            className: "hk-hover-popup",
+            maxWidth: "280px"
+          });
+
           // Cursor + feature-state hover handling on the BASE FILL layer
+          // Reusable popup (no close button, follows mouse)
           map.on("mousemove", "hk-fill", (e: any) => {
             map.getCanvas().style.cursor = "pointer";
-
             const f = e.features?.[0];
             if (!f) return;
 
+            // feature-state hover toggle
             const id = typeof f.id !== "undefined" ? f.id : null;
-            if (id == null) return; // need feature ids for feature-state
-
-            // clear previous hover
-            if (hoveredIdRef.current != null) {
-              map.setFeatureState({ source: "hk", id: hoveredIdRef.current }, { hover: false });
+            if (id != null && hoveredIdRef.current !== id) {
+              if (hoveredIdRef.current != null) {
+                map.setFeatureState({ source: "hk", id: hoveredIdRef.current }, { hover: false });
+              }
+              hoveredIdRef.current = id;
+              map.setFeatureState({ source: "hk", id }, { hover: true });
             }
-            // set new hover
-            hoveredIdRef.current = id;
-            map.setFeatureState({ source: "hk", id }, { hover: true });
+
+            // popup content from infoMap
+            const p = f.properties || {};
+            const nmLc = (p.name || p.DISTRICT || p.District || p.dc_name_e || "").toLowerCase();
+            if (!SECTION_IDS[nmLc]) {
+              popup.remove();
+              return;
+            }
+            const info = infoMap.get(nmLc);
+
+            popup
+              .setLngLat(e.lngLat)
+              .setHTML(popupHTML(p, info))
+              .addTo(map);
           });
 
           map.on("mouseleave", "hk-fill", () => {
@@ -187,6 +277,7 @@ export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson" }: { geo
               map.setFeatureState({ source: "hk", id: hoveredIdRef.current }, { hover: false });
               hoveredIdRef.current = null;
             }
+            popup.remove();
           });
 
           // Click → scroll to the matching section (targets only)
@@ -218,7 +309,7 @@ export default function HKMapbox({ geojsonUrl = "/hk-districts.geojson" }: { geo
       mapRef.current = null;
       hoveredIdRef.current = null;
     };
-  }, [geojsonUrl]);
+  }, [geojsonUrl, dataUrl]);
 
   return (
     <div className="mt-10">
