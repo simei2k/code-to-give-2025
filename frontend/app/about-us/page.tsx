@@ -211,6 +211,7 @@ export default function AboutPage() {
                   variant="h4" 
                   component="h2" 
                   color="#006e34" 
+                  align="center" 
                   fontWeight="bold"
                   sx={{
                     background: 'linear-gradient(45deg, #006e34 30%, #4caf50 90%)',
@@ -842,7 +843,7 @@ export default function AboutPage() {
           </Grow>
 
           {/* Partnering Organizations Section */}
-          <Grow in={activeSection >= 3} timeout={800}>
+          <Grow in={activeSection >= 2} timeout={800}>
             <Box ref={sectionRefs[3]}>
               <Typography 
                 variant="h3" 
