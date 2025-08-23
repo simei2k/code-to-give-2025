@@ -1,0 +1,25 @@
+{
+    "sham shui po": {
+      "howMuchDonated": 1500,
+      "schools": [
+        "Yan Oi Tong Pang Hung Cheung Kindergarten",
+        "Yan Oi Tong CTK",
+        "Yan Oi Tong Dan Yang Wing Man"
+      ]
+    },
+    "kwun tong": {
+      "howMuchDonated": 2300,
+      "schools": [
+        "Yan Oi Tong Tin Ka Ping Primary School",
+        "Yan Oi Tong District Learning Centre"
+      ]
+    },
+    "kwai tsing": {
+      "howMuchDonated": 900,
+      "schools": [
+        "Yan Oi Tong Tsing Yi Learning Hub",
+        "Yan Oi Tong Kindergarten (Kwai Tsing)"
+      ]
+    }
+  }
+  

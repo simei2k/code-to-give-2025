@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,13 +23,12 @@ export default function LoginPage() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    // Clear errors when user starts typing
+
     if (error) setError("");
     if (success) setSuccess("");
   };
 
   const validateForm = () => {
-    // Basic field validation
     if (!formData.email || !formData.password) {
       setError("Email and password are required");
       return false;
@@ -40,7 +41,6 @@ export default function LoginPage() {
       return false;
     }
 
-    // Signup-specific validation
     if (!isLogin) {
       if (!formData.displayName?.trim()) {
         setError("Display name is required for signup");
@@ -76,67 +76,63 @@ export default function LoginPage() {
     setSuccess("");
 
     try {
-      const endpoint = isLogin ? "/api/login" : "/api/signup";
-      const requestBody = isLogin 
-        ? { 
-            email: formData.email.trim(), 
-            password: formData.password 
-          }
-        : { 
-            email: formData.email.trim(), 
-            password: formData.password, 
-            displayName: formData.displayName.trim() 
-          };
+      if (isLogin) {
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          formData.email.trim(),
+          formData.password
+        );
+        const user = userCredential.user;
+        const token = await user.getIdToken();
 
-      console.log(`Making ${isLogin ? 'login' : 'signup'} request to:`, endpoint);
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await response.json();
-      console.log('Response:', { status: response.status, data });
-
-      if (response.ok) {
-        const successMessage = isLogin ? "Login successful!" : "Account created successfully!";
-        setSuccess(successMessage);
-        
-        // Store user data in localStorage
+        setSuccess("Login successful!");
         const userData = {
-          uid: data.uid,
-          email: data.email,
-          displayName: data.displayName,
-          token: data.token
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          token
         };
-        
         localStorage.setItem("user", JSON.stringify(userData));
-        console.log('User data stored:', userData);
+        console.log("User logged in:", userData);
 
-        // Redirect to home page after a short delay
-        setTimeout(() => {
-          router.push("/");
-        }, 1500);
       } else {
-        // Handle different error status codes
-        let errorMessage = data.error || "An error occurred";
-        
-        if (response.status === 409 && !isLogin) {
-          errorMessage = "An account with this email already exists. Please try logging in instead.";
-        } else if (response.status === 401 && isLogin) {
-          errorMessage = "Invalid email or password. Please check your credentials.";
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email.trim(),
+          formData.password
+        );
+        const user = userCredential.user;
+
+        if (formData.displayName.trim()) {
+          await updateProfile(user, { displayName: formData.displayName.trim() });
         }
-        
-        setError(errorMessage);
-        console.error('Authentication error:', { status: response.status, error: errorMessage });
+
+        const token = await user.getIdToken();
+
+        setSuccess("Account created successfully!");
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          token
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        console.log("User signed up:", userData);
       }
-    } catch (error) {
-      const errorMessage = "Network error. Please check your internet connection and try again.";
+
+      // redirect to donor-home after short delay
+      setTimeout(() => {
+        router.push("/donor-home");
+      }, 1500);
+    } catch (err: any) {
+      let errorMessage = err.message || "An error occurred";
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        errorMessage = "Invalid email or password.";
+      } else if (err.code === "auth/email-already-in-use") {
+        errorMessage = "An account with this email already exists.";
+      }
       setError(errorMessage);
-      console.error("Network error:", error);
+      console.error("Firebase Auth error:", err);
     } finally {
       setLoading(false);
     }
@@ -155,24 +151,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fffcec' }}>
+    <div 
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" 
+      style={{ 
+        background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)'
+      }}
+    >
       <div className="max-w-md w-full space-y-8">
-                  <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {isLogin ? (
-                <>
-                  Welcome to <span style={{ color: '#006e34' }}>REACH</span>
-                </>
-              ) : (
-                "Create Your Account"
-              )}
-            </h2>
+        <div className="text-center">
+          {/* Project REACH Logo */}
+          <div className="mb-6 flex justify-center">
+            <img 
+              src="/reachlogo.png" 
+              alt="Project REACH Logo" 
+              className="w-32 h-32 md:w-40 md:h-40"
+            />
+          </div>
+          
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {isLogin ? (
+              <>
+                Welcome to <span style={{ color: '#006e34' }}>REACH</span>
+              </>
+            ) : (
+              "Create Your Account"
+            )}
+          </h2>
           <p className="text-gray-600">
             {isLogin ? "Log in to your account" : "Join our community today!"}
           </p>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-xl rounded-lg sm:px-10 border border-gray-100">
+        <div 
+          className="py-8 px-6 shadow-xl rounded-3xl sm:px-10 border relative overflow-hidden"
+          style={{
+            background: 'rgba(255, 252, 236, 0.95)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 20px 40px rgba(0, 110, 52, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+            border: '1px solid rgba(0, 110, 52, 0.1)',
+          }}
+        >
+          {/* Glass effect background overlay */}
+          <div 
+            className="absolute inset-0 -z-10"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 252, 236, 0.8) 0%, rgba(245, 242, 220, 0.6) 100%)',
+            }}
+          />
+          
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {!isLogin && (
               <div>
@@ -302,7 +328,12 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500 font-medium">
+                <span 
+                  className="px-2 text-gray-600 font-medium"
+                  style={{
+                    background: 'rgba(255, 252, 236, 0.95)',
+                  }}
+                >
                   {isLogin ? "Don't have an account?" : "Already have an account?"}
                 </span>
               </div>

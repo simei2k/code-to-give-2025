@@ -1,21 +1,80 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User, signOut } from "firebase/auth";
+import { FaInstagram, FaTiktok, FaFacebook } from "react-icons/fa6";
 
 export default function Navbar() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log("User logged out");
+    } catch (err) {
+      console.error("Error logging out:", err);
+    }
+  };
+
   return (
     <>
       {/* Main Navigation */}
       <nav className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo/Brand */}
-            <div className="flex items-center">
-              <span className="text-xl font-bold text-green-800">Code to Give</span>
+
+            {/* Logo + Social Media */}
+            <div className="flex items-center space-x-4">
+              {/* Logo */}
+              <Link href="/" className="flex items-center">
+                <img
+                  src="/projectreach.png"
+                  alt="Project REACH"
+                  className="h-10 w-auto"
+                />
+              </Link>
+
+              {/* Social Media Icons */}
+              <div className="flex space-x-6 ml-8 text-gray-600">
+                <Link
+                  href="#"
+                  aria-label="Instagram"
+                  className="hover:text-pink-600 transition-colors"
+                >
+                  <FaInstagram size={28} />
+                </Link>
+                <Link
+                  href="#"
+                  aria-label="TikTok"
+                  className="hover:text-black transition-colors"
+                >
+                  <FaTiktok size={28} />
+                </Link>
+                <Link
+                  href="#"
+                  aria-label="Facebook"
+                  className="hover:text-blue-600 transition-colors"
+                >
+                  <FaFacebook size={28} />
+                </Link>
+              </div>
             </div>
             
             {/* Navigation links */}
             <div className="hidden md:flex space-x-8">
+              {user && (
+                <Link href="/donor-home" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+                  Profile
+                </Link>
+              )}
               <Link href="/" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 Home
               </Link>
@@ -28,9 +87,21 @@ export default function Navbar() {
               <Link href="/donate" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 Donate
               </Link>
-              <Link href="/login" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-                Login/Signup
-              </Link>
+              {!user ? (
+                <Link
+                  href="/login"
+                  className="text-gray-700 hover:text-green-600 font-medium transition-colors"
+                >
+                  Login/Signup
+                </Link>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-green-600 font-medium transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              )}
             </div>
 
             {/* Mobile menu button */}
