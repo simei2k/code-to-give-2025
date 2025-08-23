@@ -52,7 +52,11 @@ export default function StoriesCarousel({ posts, intervalMs = 4000 }: StoriesCar
       const w = cardWidthRef.current || el.clientWidth;
       const max = el.scrollWidth - el.clientWidth;
       if (el.scrollLeft + w + 8 >= max) {
-        el.scrollTo({ left: 0, behavior: 'smooth' });
+        // Reached (or nearly) the end: stop auto-scrolling instead of looping back.
+        if (autoTimer.current) {
+          clearInterval(autoTimer.current);
+          autoTimer.current = null;
+        }
       } else {
         el.scrollBy({ left: w, behavior: 'smooth' });
       }
