@@ -124,7 +124,7 @@ export default function LoginPage() {
       // redirect to donor-home after short delay
       setTimeout(() => {
         router.push("/donor-home");
-      }, 1500);
+      }, 1000);
     } catch (err: any) {
       let errorMessage = err.message || "An error occurred";
       if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {

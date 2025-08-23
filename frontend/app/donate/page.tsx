@@ -409,6 +409,8 @@ export default function DonatePage() {
   const [snackbar, setSnackbar] = useState<{open:boolean; message:string; severity:'success'|'error'}>({open:false,message:'',severity:'success'});
   const [thankYouOpen, setThankYouOpen] = useState(false);
   const [lastDonationId, setLastDonationId] = useState<string | null>(null);
+  const [isLoggedInFromTheStart, setIsLoggedInFromTheStart] = useState<boolean | null>(null);
+
   const { width, height } = useWindowSize();
 
   const regionSchools: Record<string, string[]> = {
@@ -486,6 +488,8 @@ export default function DonatePage() {
 
   // Track auth state
   React.useEffect(()=>{
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    setCurrentUser(user);
     const unsub = onAuthStateChanged(auth, (u)=> setCurrentUser(u));
     return () => unsub();
   },[]);
@@ -554,6 +558,7 @@ export default function DonatePage() {
     setLastDonationId(data.id || null);
     setDialogOpen(false);
     setThankYouOpen(true);
+    setDialogStep('choose');
   };
 
   const handleRegionChange = (e: any) => {
@@ -853,7 +858,14 @@ export default function DonatePage() {
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
                 <NewButton 
                   disabled={!region || !school}
-                  onClick={() => setDialogOpen(true)}
+                  onClick={() => {
+                    setDialogOpen(true);
+                    if(currentUser?.uid) {
+                      setIsLoggedInFromTheStart(true);
+                    } else {
+                      setIsLoggedInFromTheStart(false);
+                    }
+                  }}
                   className="w-full"
                   size='medium'
                 >
@@ -964,16 +976,29 @@ export default function DonatePage() {
       </GlassCard>
 
       {/* Donation Confirmation Dialog */}
-      <Dialog open={dialogOpen} onClose={() => !submitting && setDialogOpen(false)} maxWidth="xs" fullWidth
-        PaperProps={{ sx: { position:'relative', borderRadius: 5, pb: 2, background:'linear-gradient(135deg,#fffcec 0%, #f5f2e8 100%)', border:'1px solid rgba(0,110,52,0.25)' } }}>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          if(!submitting) {
+            setDialogOpen(false);
+            setIsLoggedInFromTheStart(false);
+          }
+        }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { position:'relative', borderRadius: 5, pb: 2, background:'linear-gradient(135deg,#fffcec 0%, #f5f2e8 100%)', border:'1px solid rgba(0,110,52,0.25)' } }
+      }>
         <IconButton size="small" onClick={()=>!submitting && setDialogOpen(false)} sx={{ position:'absolute', top:6, right:6, color:'#006e34', opacity:0.6, '&:hover':{opacity:1}}}><Close fontSize="small" /></IconButton>
         <DialogTitle sx={{ fontWeight:800, color:'#006e34', textAlign:'center', pb:1 }}>Donation</DialogTitle>
         <DialogContent>
-          <Stepper activeStep={ dialogStep === 'choose' ? 0 : dialogStep === 'login' ? 1 : 2 } alternativeLabel sx={{ mb:2 }}>
+          {isLoggedInFromTheStart ? (<Stepper activeStep={ dialogStep === 'choose' ? 0 : 2 } alternativeLabel sx={{ mb:2 }}>
+            <Step><StepLabel>Select</StepLabel></Step>
+            <Step><StepLabel>Confirm</StepLabel></Step>
+          </Stepper>) : (<Stepper activeStep={ dialogStep === 'choose' ? 0 : dialogStep === 'login' ? 1 : 2 } alternativeLabel sx={{ mb:2 }}>
             <Step><StepLabel>Select</StepLabel></Step>
             <Step><StepLabel>Login</StepLabel></Step>
             <Step><StepLabel>Confirm</StepLabel></Step>
-          </Stepper>
+          </Stepper>)}
           {dialogStep === 'choose' && (
             <Box sx={{ textAlign:'center' }}>
               <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
@@ -984,7 +1009,7 @@ export default function DonatePage() {
                 {school && <Chip size="small" label={school} />}
               </Box>
               <Box sx={{ mt:3, display:'flex', flexDirection:'column', gap:1.5 }}>
-                <Button variant="contained" fullWidth onClick={()=> setDialogStep('login')} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700, '&:hover':{ background:'linear-gradient(45deg,#004d24,#003318)'} }}>Log In</Button>
+                <Button variant="contained" fullWidth onClick={() => currentUser ? setDialogStep('confirm') : setDialogStep('login')} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700, '&:hover':{ background:'linear-gradient(45deg,#004d24,#003318)'} }}>{currentUser ? 'Donate' : 'Log In'}</Button>
                 <Button variant="text" fullWidth disabled={submitting} onClick={async ()=>{
                   try { setSubmitting(true); await submitAnonymous(); } finally { setSubmitting(false);} }} sx={{ fontWeight:600, color:'#004d24', opacity:0.75, textTransform:'none', '&:hover':{ opacity:1, background:'rgba(0,110,52,0.06)' } }}>{submitting ? <CircularProgress size={18} /> : 'Donate Anonymously'}</Button>
               </Box>
@@ -1006,14 +1031,26 @@ export default function DonatePage() {
             <Box sx={{ textAlign:'center' }}>
               <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
               <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
-              <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>{currentUser?.email}</strong></Typography>
+              <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>{currentUser?.displayName}</strong></Typography>
               <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
                 {region && <Chip size="small" label={region} />}
                 {school && <Chip size="small" label={school} />}
               </Box>
               <Box sx={{ mt:3, display:'flex', gap:1.5 }}>
                 <Button onClick={()=> setDialogStep('choose')} variant="outlined" color="inherit" fullWidth disabled={submitting}>Back</Button>
-                <Button fullWidth variant="contained" disabled={submitting} onClick={async ()=>{ try{ setSubmitting(true); await submitAuthed(); } finally { setSubmitting(false);} }} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>{submitting ? <CircularProgress size={20} /> : 'Confirm Donation'}</Button>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disabled={submitting}
+                  onClick={async () => {
+                    try {
+                      setSubmitting(true);
+                      await submitAuthed();
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                    sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>{submitting ? <CircularProgress size={20} /> : 'Confirm Donation'}</Button>
               </Box>
             </Box>
           )}

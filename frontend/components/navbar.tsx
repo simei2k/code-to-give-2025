@@ -19,6 +19,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      localStorage.clear();
       console.log("User logged out");
     } catch (err) {
       console.error("Error logging out:", err);
