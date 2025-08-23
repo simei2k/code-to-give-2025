@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#006e34" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Book cover -->
+  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  
+  <!-- Bottom curve of book -->
+  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+  
+  <!-- Book pages (inner details) -->
+  <path d="M8 5h10M8 12h10M8 " stroke="white" stroke-width="0.5" fill="none" />
+  
+  <!-- Book spine -->
+  <path d="M6.5 2v20" stroke="white" stroke-width="0.75" opacity="0.8" />
+
+  <!-- ABC Text -->
+  <text x="7" y="11" fill="white" font-family="Times New Roman" stroke-width="0.2" font-weight="normal" font-size="6">ABC</text>
+</svg>
