@@ -559,6 +559,29 @@ export default function DonatePage() {
     setDialogOpen(false);
     setThankYouOpen(true);
     setDialogStep('choose');
+
+    try {
+      const response = await fetch('/api/donor', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: currentUser.email,
+          amount: amount
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update donation');
+      }
+  
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error updating donation:', error);
+      throw error;
+    }
   };
 
   const handleRegionChange = (e: any) => {
