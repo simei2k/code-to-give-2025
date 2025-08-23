@@ -4,6 +4,7 @@ import Image from "next/image";
 import { getUpdatePosts } from "@/lib/api"; 
 import HKMapbox from "@/components/HKMapbox";
 import { GlassCard, StyledContainer } from "../donate/page";
+import StoriesCarousel from "@/components/StoriesCarousel";
 
 export const revalidate = 60;
 
@@ -48,7 +49,7 @@ export default async function Stories() {
           <HKMapbox geojsonUrl="/hk-districts.geojson" />
         </section>
 
-        <section className="px-6 mt-12 pb-16">
+  <section className="px-6 mt-12 pb-16">
           <div className="max-w-7xl mx-auto space-y-12">
             {COLUMNS.map((col) => (
               <div key={col} id={SECTION_IDS[col]} className="scroll-mt-24">
@@ -62,45 +63,13 @@ export default async function Stories() {
                   </a>
                 </div>
 
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {grouped[col]?.length ? (
-                    grouped[col].map((post) => {
-                      const href = `/stories/${post.fields.slug}`;
-                      const img = urlFromAsset(post.fields.coverImage);
-
-                      return (
-                        <li key={post.sys.id}>
-                          <Link
-                            href={href}
-                            className="group block rounded-xl border border-[#006e34]/10 bg-white shadow-sm hover:shadow-md transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#006e34]"
-                          >
-                            <div className="p-4">
-                              {img ? (
-                                <div className="relative w-full aspect-[16/9] mb-3 overflow-hidden rounded-lg">
-                                  <Image
-                                    src={`${img}?w=1200&h=675&fit=fill&fm=jpg&q=80`}
-                                    alt={post.fields.title}
-                                    fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                                    sizes="(max-width: 768px) 100vw, 600px"
-                                  />
-                                </div>
-                              ) : null}
-
-                              <h3 className="font-semibold text-lg leading-snug text-gray-900">
-                                {post.fields.title}
-                              </h3>
-                            </div>
-                          </Link>
-                        </li>
-                      );
-                    })
-                  ) : (
-                    <li className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500 col-span-full">
-                      No stories yet.
-                    </li>
-                  )}
-                </ul>
+                {grouped[col]?.length ? (
+                  <StoriesCarousel posts={grouped[col]} />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+                    No stories yet.
+                  </div>
+                )}
               </div>
             ))}
           </div>
