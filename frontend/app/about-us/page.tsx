@@ -88,7 +88,7 @@ const teamMembers = [
 ];
 
 export default function AboutPage() {
-  const [activeSection, setActiveSection] = useState(0);
+  const [activeSection, setActiveSection] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -109,7 +109,7 @@ export default function AboutPage() {
       sectionRefs.forEach((ref, index) => {
         if (ref.current) {
           const rect = ref.current.getBoundingClientRect();
-          if (rect.top <= window.innerHeight * 0.8 && rect.bottom >= window.innerHeight * 0.2) {
+          if (rect.top <= window.innerHeight * 0.9 && rect.bottom >= window.innerHeight * 0.05) {
             setActiveSection(index);
           }
         }
@@ -117,8 +117,6 @@ export default function AboutPage() {
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll();
-    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
