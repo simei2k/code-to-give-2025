@@ -315,7 +315,7 @@ const CrownIcon = styled(Box, {
 
 export default function DonatePage() {
   const [amount, setAmount] = useState<number>(50);
-  const [customAmount, setCustomAmount] = useState<string>('');
+  const [customAmount, setCustomAmount] = useState<string>('50');
 
   const sliderMarks = [
     { value: 1, label: '$1' },
@@ -325,12 +325,24 @@ export default function DonatePage() {
   ];
 
   const handleSliderChange = (event: Event, newValue: number | number[]) => {
-    setAmount(newValue as number);
-    setCustomAmount(''); // Clear custom amount when slider changes
+    const value = newValue as number;
+    setAmount(value);
+    setCustomAmount(value.toString()); // Sync custom amount with slider
   };
 
   const handleCustomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomAmount(event.target.value);
+    const value = event.target.value;
+    
+    // Prevent negative values and non-numeric input
+    if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0)) {
+      setCustomAmount(value);
+      
+      // Update slider if value is valid and within range
+      if (value !== '' && !isNaN(Number(value))) {
+        const numValue = Math.max(0, Number(value)); // Ensure non-negative
+        setAmount(Math.min(Math.max(numValue, 1), 500)); // Keep slider in bounds but allow custom amount to exceed
+      }
+    }
   };
 
   const getActiveCardIndex = () => {
@@ -345,14 +357,17 @@ export default function DonatePage() {
   };
 
   const getMessage = () => {
-    const currentAmount = customAmount ? parseFloat(customAmount) : amount;
+    const currentAmount = customAmount && !isNaN(Number(customAmount)) ? parseFloat(customAmount) : amount;
     if (currentAmount >= 500) return "You're a true champion of education!";
     if (currentAmount >= 250) return "Your generosity will transform many lives!";
     if (currentAmount >= 50) return "Thank you for making education accessible!";
-    return "Every dollar counts in changing a child's future!";
+    if (currentAmount > 0) return "Every dollar counts in changing a child's future!";
+    return "Enter an amount to see your impact!";
   };
 
-  const displayAmount = customAmount ? `$${customAmount}` : `$${amount}`;
+  const displayAmount = customAmount && !isNaN(Number(customAmount)) && Number(customAmount) > 0 
+    ? `$${customAmount}` 
+    : `$${amount}`;
 
   return (
     <StyledContainer>
@@ -544,39 +559,42 @@ export default function DonatePage() {
               </Box>
             </Grow>
 
-            {/* Custom Amount Input - Only show when slider reaches maximum */}
-            {amount >= 500 && (
-              <Fade in timeout={1800}>
-                <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
-                  <TextField
-                    label="Enter a custom amount"
-                    type="number"
-                    value={customAmount}
-                    onChange={handleCustomChange}
-                    fullWidth
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor: '#006e34',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: '#006e34',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#006e34',
-                        },
+            {/* Custom Amount Input - Always visible */}
+            <Fade in timeout={1800}>
+              <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
+                <TextField
+                  label="Enter a custom amount"
+                  type="number"
+                  value={customAmount}
+                  onChange={handleCustomChange}
+                  fullWidth
+                  inputProps={{
+                    min: 0,
+                    step: 1,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#006e34',
                       },
-                      '& .MuiInputLabel-root': {
-                        color: '#006e34',
+                      '&:hover fieldset': {
+                        borderColor: '#006e34',
                       },
-                      '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#006e34',
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#006e34',
                       },
-                    }}
-                  />
-                </Box>
-              </Fade>
-            )}
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#006e34',
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#006e34',
+                    },
+                  }}
+                  helperText="Amount will sync with the slider above"
+                />
+              </Box>
+            </Fade>
 
             {/* Donate Button */}
             <Fade in timeout={1900}>
