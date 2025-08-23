@@ -500,7 +500,8 @@ export default function DonatePage() {
         displayName: 'Anonymous',
         email: `anonymous+${Date.now()}@donor.local`,
         message: `${school || ''}${school && region ? ', ' : ''}${region || ''}` || '-',
-        region,
+        donorId: uid,
+        district: region,
         school
       })
     });
@@ -528,6 +529,8 @@ export default function DonatePage() {
     }
   };
 
+  const uid = currentUser?.uid ?? null;
+
   const submitAuthed = async () => {
     if(!currentUser) return;
     const res = await fetch('/api/donations', {
@@ -538,7 +541,8 @@ export default function DonatePage() {
         displayName: currentUser.displayName || currentUser.email || '-',
         email: currentUser.email || `user+${Date.now()}@donor.local`,
         message: `${school || ''}${school && region ? ', ' : ''}${region || ''}` || '-',
-        region,
+        donorId: uid, 
+        district: region,
         school
       })
     });

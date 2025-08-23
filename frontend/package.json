@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build --turbopack",
     "start": "next start"
   },
@@ -14,9 +14,11 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
+    "@tailwindcss/postcss": "^4.1.12",
     "contentful": "^11.7.15",
     "firebase": "^12.1.0",
     "idb": "^8.0.3",
+    "lucide-react": "^0.541.0",
     "mapbox-gl": "^3.14.0",
     "next": "15.5.0",
     "object-inspect": "^1.13.4",
