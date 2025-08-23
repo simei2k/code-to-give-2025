@@ -86,7 +86,7 @@ export default function LoginPage() {
         const user = userCredential.user;
         const token = await user.getIdToken();
 
-        setSuccess("Login successful!");
+        setSuccess("Login successful! Redirecting shortly...");
         const userData = {
           uid: user.uid,
           email: user.email,
@@ -127,7 +127,7 @@ export default function LoginPage() {
       }, 1500);
     } catch (err: any) {
       let errorMessage = err.message || "An error occurred";
-      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
         errorMessage = "Invalid email or password.";
       } else if (err.code === "auth/email-already-in-use") {
         errorMessage = "An account with this email already exists.";
