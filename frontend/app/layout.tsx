@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Open_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
-import { GlassCard, StyledContainer } from "./donate/page";
+import { AuthProvider } from "@/app/providers/AuthProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,8 +34,10 @@ export default function RootLayout({
         className={`${inter.variable} ${openSans.variable} antialiased`}
         style={{ fontFamily: 'var(--font-inter)' }}
       >
-        <Navbar />
-        <main>{children}</main>
+        <AuthProvider>
+          <Navbar />
+          <main className="pt-20">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
