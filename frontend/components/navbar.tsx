@@ -1,8 +1,28 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User, signOut } from "firebase/auth";
 
 export default function Navbar() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log("User logged out");
+    } catch (err) {
+      console.error("Error logging out:", err);
+    }
+  };
+
   return (
     <>
       {/* Main Navigation */}
@@ -22,6 +42,11 @@ export default function Navbar() {
             
             {/* Navigation links */}
             <div className="hidden md:flex space-x-8">
+              {user && (
+                <Link href="/donor-home" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
+                  Profile
+                </Link>
+              )}
               <Link href="/" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 Home
               </Link>
@@ -34,9 +59,21 @@ export default function Navbar() {
               <Link href="/donate" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
                 Donate
               </Link>
-              <Link href="/login" className="text-gray-700 hover:text-green-600 font-medium transition-colors">
-                Login/Signup
-              </Link>
+              {!user ? (
+                <Link
+                  href="/login"
+                  className="text-gray-700 hover:text-green-600 font-medium transition-colors"
+                >
+                  Login/Signup
+                </Link>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-green-600 font-medium transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              )}
             </div>
 
             {/* Mobile menu button */}

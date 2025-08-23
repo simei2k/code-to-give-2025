@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,13 +23,12 @@ export default function LoginPage() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    // Clear errors when user starts typing
+
     if (error) setError("");
     if (success) setSuccess("");
   };
 
   const validateForm = () => {
-    // Basic field validation
     if (!formData.email || !formData.password) {
       setError("Email and password are required");
       return false;
@@ -40,7 +41,6 @@ export default function LoginPage() {
       return false;
     }
 
-    // Signup-specific validation
     if (!isLogin) {
       if (!formData.displayName?.trim()) {
         setError("Display name is required for signup");
@@ -76,67 +76,63 @@ export default function LoginPage() {
     setSuccess("");
 
     try {
-      const endpoint = isLogin ? "/api/login" : "/api/signup";
-      const requestBody = isLogin 
-        ? { 
-            email: formData.email.trim(), 
-            password: formData.password 
-          }
-        : { 
-            email: formData.email.trim(), 
-            password: formData.password, 
-            displayName: formData.displayName.trim() 
-          };
+      if (isLogin) {
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          formData.email.trim(),
+          formData.password
+        );
+        const user = userCredential.user;
+        const token = await user.getIdToken();
 
-      console.log(`Making ${isLogin ? 'login' : 'signup'} request to:`, endpoint);
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await response.json();
-      console.log('Response:', { status: response.status, data });
-
-      if (response.ok) {
-        const successMessage = isLogin ? "Login successful!" : "Account created successfully!";
-        setSuccess(successMessage);
-        
-        // Store user data in localStorage
+        setSuccess("Login successful!");
         const userData = {
-          uid: data.uid,
-          email: data.email,
-          displayName: data.displayName,
-          token: data.token
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          token
         };
-        
         localStorage.setItem("user", JSON.stringify(userData));
-        console.log('User data stored:', userData);
+        console.log("User logged in:", userData);
 
-        // Redirect to home page after a short delay
-        setTimeout(() => {
-          router.push("/");
-        }, 1500);
       } else {
-        // Handle different error status codes
-        let errorMessage = data.error || "An error occurred";
-        
-        if (response.status === 409 && !isLogin) {
-          errorMessage = "An account with this email already exists. Please try logging in instead.";
-        } else if (response.status === 401 && isLogin) {
-          errorMessage = "Invalid email or password. Please check your credentials.";
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email.trim(),
+          formData.password
+        );
+        const user = userCredential.user;
+
+        if (formData.displayName.trim()) {
+          await updateProfile(user, { displayName: formData.displayName.trim() });
         }
-        
-        setError(errorMessage);
-        console.error('Authentication error:', { status: response.status, error: errorMessage });
+
+        const token = await user.getIdToken();
+
+        setSuccess("Account created successfully!");
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          token
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        console.log("User signed up:", userData);
       }
-    } catch (error) {
-      const errorMessage = "Network error. Please check your internet connection and try again.";
+
+      // redirect to donor-home after short delay
+      setTimeout(() => {
+        router.push("/donor-home");
+      }, 1500);
+    } catch (err: any) {
+      let errorMessage = err.message || "An error occurred";
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        errorMessage = "Invalid email or password.";
+      } else if (err.code === "auth/email-already-in-use") {
+        errorMessage = "An account with this email already exists.";
+      }
       setError(errorMessage);
-      console.error("Network error:", error);
+      console.error("Firebase Auth error:", err);
     } finally {
       setLoading(false);
     }
