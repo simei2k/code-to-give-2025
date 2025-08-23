@@ -5,6 +5,43 @@ import { Visibility, VisibilityOff, Close } from '@mui/icons-material';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { styled, keyframes } from "@mui/material/styles";
+import LinearProgress from "@mui/material/LinearProgress";
+import Confetti from "react-confetti";
+import { useWindowSize } from "react-use";
+
+const CrownSVG = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 64 64"
+    width="100"
+    height="100"
+    style={{ filter: "drop-shadow(0px 4px 6px rgba(0,0,0,0.4))" }}
+  >
+    <path
+      fill="gold"
+      d="M4 20 L16 40 L32 12 L48 40 L60 20 L52 52 H12 Z"
+    />
+    <circle cx="12" cy="20" r="4" fill="#FFD700" />
+    <circle cx="32" cy="12" r="4" fill="#FFD700" />
+    <circle cx="52" cy="20" r="4" fill="#FFD700" />
+  </svg>
+);
+
+const CrownWrapper = styled("div")({
+  position: "relative",
+  top: "5px",
+  left: "96%",
+  transform: "translateX(-50%)",
+  animation: "float 3s ease-in-out infinite, glow 2.5s ease-in-out infinite",
+  "@keyframes float": {
+    "0%, 100%": { transform: "translateX(-50%) translateY(0)" },
+    "50%": { transform: "translateX(-50%) translateY(-10px)" },
+  },
+  "@keyframes glow": {
+    "0%, 100%": { filter: "drop-shadow(0 0 6px gold)" },
+    "50%": { filter: "drop-shadow(0 0 20px gold)" },
+  },
+});
 
 const images = [
   { src: "/picture_1.jpg", alt: "School Supplies", impact: "Textbooks & Stationery" },
@@ -212,14 +249,23 @@ const FloatingButton = styled(Button)({
 });
 
 // Leaderboard data
+// const leaderboardData = [
+//   { id: 1, name: "Sarah Chen", amount: 450, rank: 1, level: "Champion", isCurrentUser: false },
+//   { id: 2, name: "Michael Rodriguez", amount: 380, rank: 2, level: "Hero", isCurrentUser: false },
+//   { id: 3, name: "Emma Thompson", amount: 320, rank: 3, level: "Hero", isCurrentUser: false },
+//   { id: 4, name: "You", amount: 120, rank: 4, level: "Supporter", isCurrentUser: true },
+//   { id: 5, name: "David Park", amount: 95, rank: 5, level: "Friend", isCurrentUser: false },
+//   { id: 6, name: "Lisa Wang", amount: 75, rank: 6, level: "Friend", isCurrentUser: false },
+//   { id: 7, name: "James Wilson", amount: 50, rank: 7, level: "Starter", isCurrentUser: false },
+// ];
 const leaderboardData = [
-  { id: 1, name: "Sarah Chen", amount: 450, rank: 1, level: "Champion", isCurrentUser: false },
-  { id: 2, name: "Michael Rodriguez", amount: 380, rank: 2, level: "Hero", isCurrentUser: false },
-  { id: 3, name: "Emma Thompson", amount: 320, rank: 3, level: "Hero", isCurrentUser: false },
-  { id: 4, name: "You", amount: 120, rank: 4, level: "Supporter", isCurrentUser: true },
-  { id: 5, name: "David Park", amount: 95, rank: 5, level: "Friend", isCurrentUser: false },
-  { id: 6, name: "Lisa Wang", amount: 75, rank: 6, level: "Friend", isCurrentUser: false },
-  { id: 7, name: "James Wilson", amount: 50, rank: 7, level: "Starter", isCurrentUser: false },
+  { id: 1, name: "Sarah Chen", amount: 450, rank: 1, message: "Because I care!", isCurrentUser: false },
+  { id: 2, name: "Michael Rodriguez", amount: 380, rank: 2, message: "Let's keep education accessible!", isCurrentUser: false },
+  { id: 3, name: "Emma Thompson", amount: 320, rank: 3, message: "Happy to be a part of this cause", isCurrentUser: false },
+  { id: 4, name: "You", amount: 120, rank: 4, message: "TAKE THIS SPOT FROM ME :)", isCurrentUser: true },
+  { id: 5, name: "David Park", amount: 95, rank: 5, message: "On behalf of Singapore!", isCurrentUser: false },
+  { id: 6, name: "Lisa Wang", amount: 75, rank: 6, message: "for equal access to education", isCurrentUser: false },
+  { id: 7, name: "James Wilson", amount: 50, rank: 7, message: "yay!", isCurrentUser: false },
 ];
 
 // Leaderboard Container
@@ -277,40 +323,62 @@ const PodiumBar = styled(Box, {
 
 // Avatar Container
 const AvatarContainer = styled(Box)({
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  overflow: 'hidden',
-  border: '2px solid #fff',
-  boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-  marginBottom: '8px',
-  background: 'linear-gradient(45deg, #006e34, #004d24)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: 'white',
-  fontSize: '16px',
-  fontWeight: 'bold',
+  width: "52px",
+  height: "52px",
+  borderRadius: "50%",
+  fontSize: "20px",
+  marginRight: "16px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "linear-gradient(45deg, #006e34, #004d24)",
+  color: "white",
+  fontWeight: "bold",
 });
+
+const MedalIcon = ({ type }: { type: "gold" | "silver" | "bronze" }) => {
+  const colors = {
+    gold:   { fill: "#FFD700", stroke: "#DAA520" },
+    silver: { fill: "#C0C0C0", stroke: "#A9A9A9" },
+    bronze: { fill: "#CD7F32", stroke: "#8B4513" },
+  };
+
+  const { fill, stroke } = colors[type];
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      width="32"
+      height="32"
+      style={{ marginRight: "8px" }}
+    >
+      <circle cx="32" cy="32" r="14" fill={fill} stroke={stroke} strokeWidth="4" />
+      <path d="M20 10 L28 28" stroke="#004d24" strokeWidth="6" />
+      <path d="M44 10 L36 28" stroke="#004d24" strokeWidth="6" />
+    </svg>
+  );
+};
 
 // Leaderboard List Item
 const LeaderboardItem = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isCurrentUser',
+  shouldForwardProp: (prop) => prop !== "isCurrentUser",
 })<{ isCurrentUser?: boolean }>(({ isCurrentUser }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '8px 12px',
-  borderRadius: '12px',
-  marginBottom: '6px',
-  background: isCurrentUser 
-    ? 'linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 193, 7, 0.1))'
-    : 'rgba(255, 255, 255, 0.6)',
-  border: isCurrentUser ? '2px solid #FF9800' : '1px solid rgba(0, 110, 52, 0.1)',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 12px rgba(0, 110, 52, 0.15)',
-  }
+  display: "flex",
+  alignItems: "center",
+  padding: "16px 20px",
+  borderRadius: "16px",
+  marginBottom: "12px",
+  fontSize: "16px",
+  background: isCurrentUser
+    ? "linear-gradient(135deg, rgba(255, 152, 0, 0.12), rgba(255, 193, 7, 0.12))"
+    : "rgba(255, 255, 255, 0.75)",
+  border: isCurrentUser ? "2px solid #FF9800" : "1px solid rgba(0, 110, 52, 0.15)",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-3px) scale(1.02)",
+    boxShadow: "0 6px 14px rgba(0, 110, 52, 0.15)",
+  },
 }));
 
 // Crown icon for top ranks
@@ -340,6 +408,7 @@ export default function DonatePage() {
   const [snackbar, setSnackbar] = useState<{open:boolean; message:string; severity:'success'|'error'}>({open:false,message:'',severity:'success'});
   const [thankYouOpen, setThankYouOpen] = useState(false);
   const [lastDonationId, setLastDonationId] = useState<string | null>(null);
+  const { width, height } = useWindowSize();
 
   const regionSchools: Record<string, string[]> = {
     'Kwai Tsing': [
@@ -807,225 +876,87 @@ export default function DonatePage() {
 
           </Box>
         </Box>
-
-        {/* Original Leaderboard with Podium Bars */}
-        <Fade in timeout={1800}>
+        
+        <Fade in timeout={2200}>
           <LeaderboardContainer elevation={0}>
-            <Typography 
-              variant="h5" 
-              align="center" 
-              sx={{ 
-                color: '#006e34',
-                fontWeight: '600',
-                mb: 2,
-                fontSize: { xs: '1.2rem', md: '1.5rem' },
-                fontFamily: 'var(--font-inter), sans-serif',
-                letterSpacing: '0.05em',
-              }}
-            >
-              🏆 Donation Leaderboard
-            </Typography>
-
-            {/* Top 3 Podium with Bars */}
-            <PodiumContainer>
-              {leaderboardData.slice(0, 3).map((donor, index) => {
-                const rank = index === 1 ? 1 : index === 0 ? 2 : 3; // Center is 1st, left is 2nd, right is 3rd
-                const actualDonor = leaderboardData[rank - 1];
-                return (
-                  <PodiumItem key={actualDonor.id} rank={rank}>
-                    {rank <= 3 && (
-                      <CrownIcon rank={rank}>
-                        {rank === 1 ? '👑' : rank === 2 ? '🥈' : '🥉'}
-                      </CrownIcon>
-                    )}
-                    <AvatarContainer>
-                      {actualDonor.name.charAt(0)}
-                    </AvatarContainer>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        fontWeight: '600', 
-                        color: '#006e34',
-                        textAlign: 'center',
-                        mb: 0.5,
-                        fontSize: '12px'
-                      }}
-                    >
-                      {actualDonor.name}
-                    </Typography>
-                    <PodiumBar rank={rank}>
-                      {rank}
-                    </PodiumBar>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        fontWeight: 'bold', 
-                        color: '#006e34',
-                        mt: 0.5,
-                        fontSize: '12px'
-                      }}
-                    >
-                      ${actualDonor.amount}
-                    </Typography>
-                  </PodiumItem>
-                );
-              })}
-            </PodiumContainer>
-
-            {/* Current User Highlight */}
-            <Box sx={{ mb: 2 }}>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: '#FF9800',
-                  fontWeight: '600',
-                  mb: 1,
-                  textAlign: 'center',
-                  fontSize: { xs: '0.9rem', md: '1rem' }
+            <CrownWrapper>
+              <CrownSVG />
+            </CrownWrapper>
+          {/* Top Donor Hero Card */}      
+          {leaderboardData[0] && (
+            <Box sx={{ 
+              p: 3, 
+              mb: 3, 
+              borderRadius: 3, 
+              backgroundColor: '#004d25', 
+              color: 'white',
+              boxShadow: 3,
+              textAlign: 'center'
+            }}>
+              <Confetti
+                width={width}
+                height={310} 
+                numberOfPieces={100}
+                recycle={true}
+                gravity={0.2}
+                style={{
+                  position: "absolute",
+                  top: -20,
+                  left: 0,
+                  pointerEvents: "none"
                 }}
-              >
-                Your Position
+              />
+              <Typography variant="h3" sx={{ fontWeight: '700', mb: 1 }}>
+                {leaderboardData[0].name}
               </Typography>
-              {leaderboardData
-                .filter(donor => donor.isCurrentUser)
-                .map((donor) => (
-                  <LeaderboardItem key={donor.id} isCurrentUser={true}>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        minWidth: '30px',
-                        fontWeight: 'bold',
-                        color: '#FF9800',
-                        mr: 2,
-                        fontSize: '14px'
-                      }}
-                    >
-                      #{donor.rank}
-                    </Typography>
-                    <AvatarContainer sx={{ width: '32px', height: '32px', mr: 2, fontSize: '14px' }}>
-                      {donor.name.charAt(0)}
-                    </AvatarContainer>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography 
-                        variant="body1" 
-                        sx={{ 
-                          fontWeight: '600',
-                          color: '#006e34',
-                          fontSize: '14px'
-                        }}
-                      >
-                        {donor.name}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#FF9800',
-                          fontSize: '10px'
-                        }}
-                      >
-                        {donor.level} Level
-                      </Typography>
-                    </Box>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        fontWeight: 'bold',
-                        color: '#006e34',
-                        fontSize: '14px'
-                      }}
-                    >
-                      ${donor.amount}
-                    </Typography>
-                  </LeaderboardItem>
-                ))}
+              <Typography variant="h5" sx={{ fontStyle: 'italic', opacity: 0.9, mb: 1 }}>
+                {leaderboardData[0].message || "Making an impact!"}
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: '700', color: '#A5D6A7' }}>
+                ${leaderboardData[0].amount}
+              </Typography>
             </Box>
+          )}
 
-            {/* Full Leaderboard List */}
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: '#006e34',
-                fontWeight: '600',
-                mb: 1,
-                fontSize: { xs: '0.9rem', md: '1rem' }
-              }}
-            >
-              All Donors
-            </Typography>
-            {leaderboardData.slice(0, 7).map((donor) => (
-              <LeaderboardItem key={donor.id} isCurrentUser={donor.isCurrentUser}>
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    minWidth: '25px',
-                    fontWeight: 'bold',
-                    color: donor.isCurrentUser ? '#FF9800' : '#006e34',
-                    mr: 2,
-                    fontSize: '12px'
-                  }}
-                >
-                  {String(donor.rank).padStart(2, '0')}
-                </Typography>
-                <AvatarContainer sx={{ width: '32px', height: '32px', mr: 2, fontSize: '14px' }}>
-                  {donor.name.charAt(0)}
-                </AvatarContainer>
-                <Box sx={{ flex: 1 }}>
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
-                      fontWeight: donor.isCurrentUser ? '700' : '500',
-                      color: '#006e34',
-                      fontSize: '12px'
-                    }}
+          {/* All Donors List */}
+          {leaderboardData.slice(1, 7).map((donor) => (
+            <LeaderboardItem key={donor.id} isCurrentUser={donor.isCurrentUser}>
+              <Box sx={{ minWidth: "32px", display: "flex", justifyContent: "center", mr: 2 }}>
+                {donor.rank === 2 ? (
+                  <MedalIcon type="silver" />
+                ) : donor.rank === 3 ? (
+                  <MedalIcon type="bronze" />
+                ) : (
+                  <Typography
+                    variant="body1"
+                    sx={{ fontWeight: "bold", color: "#006e34", fontSize: "14px" }}
                   >
-                    {donor.name}
+                    {String(donor.rank).padStart(2, "0")}
                   </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: donor.rank <= 3 ? '#FFD700' : '#006e34',
-                      fontSize: '10px',
-                      opacity: 0.8
-                    }}
-                  >
-                    {donor.level} Level
-                  </Typography>
-                </Box>
-                {donor.rank <= 3 && (
-                  <Box sx={{ mr: 1, fontSize: '14px' }}>
-                    {donor.rank === 1 ? '👑' : donor.rank === 2 ? '🥈' : '🥉'}
-                  </Box>
                 )}
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    fontWeight: 'bold',
-                    color: donor.isCurrentUser ? '#FF9800' : '#006e34',
-                    fontSize: '12px'
-                  }}
-                >
-                  ${donor.amount}
+              </Box>
+              <AvatarContainer sx={{ width: 32, height: 32, mr: 2 }}>
+                {donor.name.charAt(0)}
+              </AvatarContainer>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1" sx={{ fontWeight: 600, color: '#006e34', fontSize: '14px' }}>
+                  {donor.name}
                 </Typography>
-              </LeaderboardItem>
-            ))}
-
-            <Typography 
-              variant="body2" 
-              align="center" 
-              sx={{ 
-                mt: 2,
-                color: '#006e34',
-                opacity: 0.7,
-                fontStyle: 'italic',
-                fontSize: '10px'
-              }}
-            >
-              🌟 Donate more to climb the leaderboard and unlock new levels!
-            </Typography>
+                {donor.message && (
+                  <Typography variant="body2" sx={{ fontSize: '14px', opacity: 0.8, color: '#444' }}>
+                    {donor.message}
+                  </Typography>
+                )}
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: '#006e34' }}>
+                ${donor.amount}
+              </Typography>
+            </LeaderboardItem>
+          ))}
           </LeaderboardContainer>
         </Fade>
-
       </GlassCard>
+
       {/* Donation Confirmation Dialog */}
       <Dialog open={dialogOpen} onClose={() => !submitting && setDialogOpen(false)} maxWidth="xs" fullWidth
         PaperProps={{ sx: { position:'relative', borderRadius: 5, pb: 2, background:'linear-gradient(135deg,#fffcec 0%, #f5f2e8 100%)', border:'1px solid rgba(0,110,52,0.25)' } }}>
