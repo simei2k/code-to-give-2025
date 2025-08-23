@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Box, Typography, Slider, TextField, Button, Paper, Fade, Grow } from "@mui/material";
+import { Box, Typography, Slider, TextField, Button, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip } from "@mui/material";
 import { styled, keyframes } from "@mui/material/styles";
 
 const images = [
@@ -79,14 +79,21 @@ export const GlassCard = styled(Paper)({
   }
 });
 
-// Rotating card container
-const RotatingCardsContainer = styled(Box)({
+// Rotating card container (responsive, up to 40% of page width)
+const RotatingCardsContainer = styled(Box)(({ theme }) => ({
   position: 'relative',
-  width: '300px',
-  height: '200px',
-  perspective: '1000px',
+  width: '100%',
+  maxWidth: '40vw', // cap at 40% of viewport width
+  minWidth: 320,
+  aspectRatio: '4 / 3', // keep consistent aspect
+  height: 'auto',
+  perspective: '1200px',
   margin: '0 auto',
-});
+  [theme.breakpoints.down('md')]: {
+    maxWidth: '80vw',
+    aspectRatio: '16 / 10',
+  },
+}));
 
 // Individual rotating card
 const RotatingCard = styled(Box, {
@@ -313,9 +320,34 @@ const CrownIcon = styled(Box, {
   zIndex: 10,
 }));
 
+// Simple helper arrays removed fancy styling; using standard Select components
+
 export default function DonatePage() {
   const [amount, setAmount] = useState<number>(50);
   const [customAmount, setCustomAmount] = useState<string>('50');
+  const [region, setRegion] = useState<string>('');
+  const [school, setSchool] = useState<string>('');
+
+  const regionSchools: Record<string, string[]> = {
+    'Kwai Tsing': [
+      'Asbury Methodist Primary School',
+      'Buddhist Lam Bing Yim Memorial School (Sponsored by HKBA)',
+      'Buddhist Lim Kim Tian Memorial Primary School',
+      'CCC Chuen Yuen Second Primary School',
+      'CCC Kei Chun Primary School',
+      'Cho Yiu Catholic Primary School',
+      'CNEC Lui Ming Choi Primary School',
+      'CNEC Ta Tung School'
+    ],
+    'Sham Shui Po': [
+      'Sham Shui Po Government Primary School'
+    ],
+    'Kwun Tong': [
+      'Kwun Tong Government Primary School',
+      'Bishop Paschang Catholic School',
+      'Buddhist Chi King Primary School'
+    ]
+  };
 
   const sliderMarks = [
     { value: 1, label: '$1' },
@@ -369,6 +401,16 @@ export default function DonatePage() {
     ? `$${customAmount}` 
     : `$${amount}`;
 
+  const handleRegionChange = (e: any) => {
+    const newRegion = e.target.value as string;
+    setRegion(newRegion);
+    setSchool(''); // reset school
+  };
+
+  const handleSchoolChange = (e: any) => {
+    setSchool(e.target.value as string);
+  };
+
   return (
     <StyledContainer>
       <GlassCard elevation={0}>
@@ -387,7 +429,7 @@ export default function DonatePage() {
           
           {/* Left Column - Rotating Picture Cards */}
           <Box sx={{ 
-            flex: '0 0 45%',
+            flex: '0 0 40%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -399,10 +441,7 @@ export default function DonatePage() {
           }}>
             <Grow in timeout={1000}>
               <RotatingCardsContainer sx={{ 
-                transform: 'scale(0.9)',
-                '@media (max-width: 968px)': {
-                  transform: 'scale(0.8)',
-                }
+                transform: 'scale(1)',
               }}>
                 {images.map((img, index) => {
                   const activeIndex = getActiveCardIndex();
@@ -597,13 +636,72 @@ export default function DonatePage() {
             </Fade>
 
             {/* Donate Button */}
+            {/* Region & School Dropdowns (below amount input, above donate button) */}
+            <Fade in timeout={1850}>
+              <Box sx={{ display: 'flex', flexDirection: { xs:'column', sm:'row' }, gap: 2, px: { xs:1, md:2 }, mb:2 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="region-label" sx={{ color:'#006e34' }}>Region</InputLabel>
+                  <Select
+                    labelId="region-label"
+                    label="Region"
+                    value={region}
+                    onChange={(e) => { setRegion(e.target.value); setSchool(''); }}
+                    sx={{
+                      background:'#fff',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor:'rgba(0,110,52,0.35)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor:'#006e34' },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor:'#004d24', boxShadow:'0 0 0 2px rgba(0,110,52,0.2)' }
+                    }}
+                  >
+                    {Object.keys(regionSchools).map(r => (
+                      <MenuItem key={r} value={r}>{r}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth size="small" disabled={!region}>
+                  <InputLabel id="school-label" sx={{ color:'#006e34' }}>School</InputLabel>
+                  <Select
+                    labelId="school-label"
+                    label="School"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    sx={{
+                      background:'#fff',
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor:'rgba(0,110,52,0.35)' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor:'#006e34' },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor:'#004d24', boxShadow:'0 0 0 2px rgba(0,110,52,0.2)' }
+                    }}
+                  >
+                    {(region ? regionSchools[region] : []).map(s => (
+                      <MenuItem key={s} value={s}>{s}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+            </Fade>
+            {(region || school) && (
+              <Fade in timeout={1880}>
+                <Box sx={{ px: { xs:1, md:2 }, mb:2, display:'flex', gap:1, flexWrap:'wrap', alignItems:'center' }}>
+                  <Typography variant="caption" sx={{ fontWeight:600, color:'#006e34' }}>Selected:</Typography>
+                  {region && (
+                    <Chip size="small" label={region} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', color:'#fffcec', fontWeight:600 }} />
+                  )}
+                  {school && (
+                    <Chip size="small" label={school} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', color:'#fffcec', fontWeight:600 }} />
+                  )}
+                </Box>
+              </Fade>
+            )}
+
+            {/* Donate Button */}
             <Fade in timeout={1900}>
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
                 <FloatingButton 
                   fullWidth 
-                  onClick={() => console.log(`Donating ${displayAmount}`)}
+                  disabled={!region || !school}
+                  onClick={() => console.log(`Donating ${displayAmount} to ${school} (${region})`)}
                 >
-                  Donate {displayAmount} Now 🚀
+                  {region && school ? `Donate ${displayAmount} Now 🚀` : 'Select Region & School'}
                 </FloatingButton>
               </Box>
             </Fade>
