@@ -45,7 +45,7 @@ const cardEntrance = keyframes`
 `;
 
 // Main container with fullscreen layout
-const StyledContainer = styled(Box)({
+export const StyledContainer = styled(Box)({
   minHeight: '100vh',
   background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)',
   display: 'flex',
@@ -56,7 +56,7 @@ const StyledContainer = styled(Box)({
 });
 
 // Glass card effect
-const GlassCard = styled(Paper)({
+export const GlassCard = styled(Paper)({
   background: 'rgba(255, 252, 236, 0.95)',
   backdropFilter: 'blur(20px)',
   borderRadius: '24px',
