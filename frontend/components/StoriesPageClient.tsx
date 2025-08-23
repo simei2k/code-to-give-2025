@@ -104,7 +104,7 @@ export default function StoriesPageClient({ posts }: StoriesPageClientProps) {
 
   return (
     <>
-      <section className="px-6 mt-12 pb-16">
+      <section className="px-6 mt-12 pb-16 max-w-6xl">
         <div className="max-w-7xl mx-auto space-y-12">
           {COLUMNS.map((col) => {
             const count = grouped[col]?.length ?? 0;

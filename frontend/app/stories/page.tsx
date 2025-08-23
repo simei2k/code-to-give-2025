@@ -12,10 +12,10 @@ export default async function Stories() {
 
   return (
     <StyledContainer>
-      <GlassCard>
+
       <main className="pt-20 min-h-screen">
         <section className="text-center mb-10 px-6">
-          <span className="inline-flex items-center justify-center rounded-full border border-[#006e34]/20 bg-white/60 px-3 py-1 text-xs font-medium text-[#006e34] shadow-sm">
+          <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-[#006e34]">
             🌱 Our impact in Hong Kong
           </span>
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-secondary sm:text-5xl">
@@ -37,7 +37,7 @@ export default async function Stories() {
         </section>
   <StoriesPageClient posts={items as any} />
       </main>
-      </GlassCard>
+
     </StyledContainer>
   );
 }
