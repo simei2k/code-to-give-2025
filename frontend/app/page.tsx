@@ -97,7 +97,7 @@ export default function Home() {
       <section id="about" className="py-20 bg-white text-center">
         <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center gap-10">
           <div className="flex-1 flex flex-col items-center md:items-start text-left">
-            <h2 className="text-4xl font-bold text-yellow-500 mb-6">Our Vision</h2>
+            <h2 className="text-4xl font-bold text-yellow-500 mb-6">Our VISION</h2>
             <p className="text-lg md:text-xl text-gray-700 mb-6">
               Hong Kong is one of the most unequal cities, with <span className="font-bold text-yellow-600">40,000 kindergarten students</span> living in poverty.<br />
               Underfunded kindergartens receive far less support than primary or secondary schools, with <span className="font-bold text-yellow-600">29 closures in 2025-2026</span>, the highest in a decade.
