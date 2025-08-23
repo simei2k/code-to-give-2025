@@ -397,7 +397,7 @@ export default function DonatePage() {
   const [region, setRegion] = useState<string>('');
   const [school, setSchool] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogStep, setDialogStep] = useState<'choose'|'login'|'confirm'>('choose');
+  const [dialogStep, setDialogStep] = useState<'choose'|'login'|'confirm'|'confirm-anonymous'>('choose');
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -605,7 +605,7 @@ export default function DonatePage() {
       body: JSON.stringify({
         amount: numericAmount,
         displayName: 'Anonymous',
-        email: `anonymous+${Date.now()}@donor.local`,
+        email: currentUser ? currentUser.email : `anonymous+${Date.now()}@donor.local`,
         message: captionsBank[Math.random() * captionsBank.length],
         donorId: uid,
         district: region,
@@ -620,6 +620,7 @@ export default function DonatePage() {
     setLastDonationId(data.id || null);
     setDialogOpen(false);
     setThankYouOpen(true);
+    setDialogStep('choose');
   };
 
   const handleLogin = async () => {
@@ -672,7 +673,7 @@ export default function DonatePage() {
         },
         body: JSON.stringify({
           email: currentUser.email,
-          amount: amount
+          amount: amount // extra amount added to the total amount of the user
         })
       });
   
@@ -1141,7 +1142,10 @@ export default function DonatePage() {
         onClose={() => {
           if(!submitting) {
             setDialogOpen(false);
-            setIsLoggedInFromTheStart(false);
+            setTimeout(()=>{
+              setIsLoggedInFromTheStart(false);
+              setDialogStep('choose');
+            }, 100); // delay to prevent user from seeing resetted values before closing dialog
           }
         }}
         maxWidth="xs"
@@ -1151,14 +1155,22 @@ export default function DonatePage() {
         <IconButton size="small" onClick={()=>!submitting && setDialogOpen(false)} sx={{ position:'absolute', top:6, right:6, color:'#006e34', opacity:0.6, '&:hover':{opacity:1}}}><Close fontSize="small" /></IconButton>
         <DialogTitle sx={{ fontWeight:800, color:'#006e34', textAlign:'center', pb:1 }}>Donation</DialogTitle>
         <DialogContent>
-          {isLoggedInFromTheStart ? (<Stepper activeStep={ dialogStep === 'choose' ? 0 : 2 } alternativeLabel sx={{ mb:2 }}>
-            <Step><StepLabel>Select</StepLabel></Step>
-            <Step><StepLabel>Confirm</StepLabel></Step>
-          </Stepper>) : (<Stepper activeStep={ dialogStep === 'choose' ? 0 : dialogStep === 'login' ? 1 : 2 } alternativeLabel sx={{ mb:2 }}>
-            <Step><StepLabel>Select</StepLabel></Step>
-            <Step><StepLabel>Login</StepLabel></Step>
-            <Step><StepLabel>Confirm</StepLabel></Step>
-          </Stepper>)}
+          {isLoggedInFromTheStart ? (
+            <Stepper activeStep={ dialogStep === 'choose' ? 0 : 2 } alternativeLabel sx={{ mb:2 }}>
+              <Step><StepLabel>Select</StepLabel></Step>
+              <Step><StepLabel>Confirm</StepLabel></Step>
+            </Stepper>
+          ) : (
+            <Stepper activeStep={ 
+              dialogStep === 'choose' ? 0 : 
+              dialogStep === 'login' ? 1 : 
+              dialogStep === 'confirm-anonymous' ? 1 : 2 
+            } alternativeLabel sx={{ mb:2 }}>
+              <Step><StepLabel>Select</StepLabel></Step>
+              <Step><StepLabel>{dialogStep === 'confirm-anonymous' ? 'Confirm' : 'Login'}</StepLabel></Step>
+              <Step><StepLabel>Confirm</StepLabel></Step>
+            </Stepper>
+          )}
           {dialogStep === 'choose' && (
             <Box sx={{ textAlign:'center' }}>
               <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
@@ -1170,8 +1182,7 @@ export default function DonatePage() {
               </Box>
               <Box sx={{ mt:3, display:'flex', flexDirection:'column', gap:1.5 }}>
                 <Button variant="contained" fullWidth onClick={() => currentUser ? setDialogStep('confirm') : setDialogStep('login')} sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700, '&:hover':{ background:'linear-gradient(45deg,#004d24,#003318)'} }}>{currentUser ? 'Donate' : 'Log In'}</Button>
-                <Button variant="text" fullWidth disabled={submitting} onClick={async ()=>{
-                  try { setSubmitting(true); await submitAnonymous(); } finally { setSubmitting(false);} }} sx={{ fontWeight:600, color:'#004d24', opacity:0.75, textTransform:'none', '&:hover':{ opacity:1, background:'rgba(0,110,52,0.06)' } }}>{submitting ? <CircularProgress size={18} /> : 'Donate Anonymously'}</Button>
+                <Button variant="text" fullWidth disabled={submitting} onClick={() => setDialogStep('confirm-anonymous')} sx={{ fontWeight:600, color:'#004d24', opacity:0.75, textTransform:'none', '&:hover':{ opacity:1, background:'rgba(0,110,52,0.06)' } }}>Donate Anonymously</Button>
               </Box>
             </Box>
           )}
@@ -1192,6 +1203,7 @@ export default function DonatePage() {
               <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
               <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
               <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>{currentUser?.displayName}</strong></Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>Reminder: This donation will be recorded in 'Recent Donations'.</Typography>
               <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
                 {region && <Chip size="small" label={region} />}
                 {school && <Chip size="small" label={school} />}
@@ -1211,6 +1223,34 @@ export default function DonatePage() {
                     }
                   }}
                     sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>{submitting ? <CircularProgress size={20} /> : 'Confirm Donation'}</Button>
+              </Box>
+            </Box>
+          )}
+          {dialogStep === 'confirm-anonymous' && (
+            <Box sx={{ textAlign:'center' }}>
+              <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
+              <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>Anonymous</strong></Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>Reminder: An anonymous donation will not be published to the leaderboard. If you're logged in, you can still view your donation in 'Profile'.</Typography>
+              <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
+                {region && <Chip size="small" label={region} />}
+                {school && <Chip size="small" label={school} />}
+              </Box>
+              <Box sx={{ mt:3, display:'flex', gap:1.5 }}>
+                <Button onClick={()=> setDialogStep('choose')} variant="outlined" color="inherit" fullWidth disabled={submitting}>Back</Button>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disabled={submitting}
+                  onClick={async () => {
+                    try {
+                      setSubmitting(true);
+                      await submitAnonymous();
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  sx={{ background:'linear-gradient(45deg,#006e34,#004d24)', fontWeight:700 }}>{submitting ? <CircularProgress size={20} /> : 'Confirm Donation'}</Button>
               </Box>
             </Box>
           )}

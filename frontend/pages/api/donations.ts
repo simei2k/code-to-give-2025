@@ -67,14 +67,38 @@ export default async function handler(
       }
     }
   } else if (req.method === "GET") {
-    // Optional: Add GET method to retrieve donations
+    // Retrieve donations with filtering by email or donorId
     try {
-      const { collection: getCollection, getDocs } = await import("firebase/firestore");
-      const querySnapshot = await getDocs(getCollection(db, "donations"));
+      const { email, donorId } = req.query;
+      console.log("🔥 GET donations request - email:", email, "donorId:", donorId);
+      
+      const { collection: getCollection, getDocs, query, where } = await import("firebase/firestore");
+      const donationsRef = getCollection(db, "donations");
+      
+      let querySnapshot;
+      
+      if (email) {
+        // Filter by email
+        console.log("🔥 Filtering by email:", email);
+        const q = query(donationsRef, where("email", "==", email));
+        querySnapshot = await getDocs(q);
+      } else if (donorId) {
+        // Filter by donorId
+        console.log("🔥 Filtering by donorId:", donorId);
+        const q = query(donationsRef, where("donorId", "==", donorId));
+        querySnapshot = await getDocs(q);
+      } else {
+        // No filter provided, return empty array
+        console.log("🔥 No email or donorId provided, returning empty array");
+        return res.status(200).json({ donations: [] });
+      }
+      
       const donations = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      console.log("🔥 Found", donations.length, "donations for", email || donorId);
       
       return res.status(200).json({ donations });
     } catch (error) {
