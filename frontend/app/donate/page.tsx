@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from "react";
-import { Box, Typography, Slider, TextField, Button, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, IconButton, InputAdornment, Stepper, Step, StepLabel } from "@mui/material";
+import { Box, Typography, Slider, TextField, Paper, Fade, Grow, FormControl, InputLabel, Select, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, IconButton, InputAdornment, Stepper, Step, StepLabel } from "@mui/material";
 import { Visibility, VisibilityOff, Close } from '@mui/icons-material';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { styled, keyframes } from "@mui/material/styles";
+import Button from '@/components/Button';
 
 const images = [
   { src: "/picture_1.jpg", alt: "School Supplies", impact: "Textbooks & Stationery" },
@@ -344,7 +345,6 @@ export default function DonatePage() {
   const regionSchools: Record<string, string[]> = {
     'Kwai Tsing': [
       'Asbury Methodist Primary School',
-      'Buddhist Lam Bing Yim Memorial School (Sponsored by HKBA)',
       'Buddhist Lim Kim Tian Memorial Primary School',
       'CCC Chuen Yuen Second Primary School',
       'CCC Kei Chun Primary School',
@@ -778,13 +778,15 @@ export default function DonatePage() {
             {/* Donate Button */}
             <Fade in timeout={1700}>
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
-                <FloatingButton 
-                  fullWidth 
+                <Button 
                   disabled={!region || !school}
                   onClick={() => setDialogOpen(true)}
+                  className="w-full"
+                  size='medium'
                 >
                   {region && school ? `Donate ${displayAmount} Now 🚀` : 'Select Region & School'}
-                </FloatingButton>
+           
+                </Button>
               </Box>
             </Fade>
 
