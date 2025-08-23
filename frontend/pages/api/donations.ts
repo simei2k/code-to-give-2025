@@ -1,13 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-} from "firebase/firestore";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 import { firebaseApp } from "@/lib/firebase";
 
 const db = getFirestore(firebaseApp);
@@ -26,15 +18,14 @@ export default async function handler(
         return res.status(500).json({ error: "Firebase configuration error" });
       }
 
-      const { amount, displayName, email, message, donorId, district, school } = req.body;
+      const { amount, displayName, email, message } = req.body;
 
       // Log incoming request for debugging
       console.log("Received donation request:", { 
-        amount: amount !== undefined ? amount : "missing", 
+        amount: amount || "missing", 
         displayName: displayName || "missing",
         email: email || "missing",
-        message: message || "missing",
-        donorId: donorId || "missing" // for anon donors
+        message: message || "missing"
       });
 
       // Check if required fields are provided
@@ -49,10 +40,7 @@ export default async function handler(
         createdAt: new Date(),
         displayName: displayName || "-",
         email: email,
-        message: message || "-",
-        donorId: donorId ?? null,
-        district: district,
-        school: school,
+        message: message || "-"
       };
 
       // Add the donation to Firestore
@@ -75,60 +63,19 @@ export default async function handler(
         return res.status(500).json({ error: "An unknown error occurred" });
       }
     }
-  } if (req.method === "GET") {
+  } else if (req.method === "GET") {
+    // Optional: Add GET method to retrieve donations
     try {
-      if (!firebaseApp) {
-        console.error("Firebase app not initialized");
-        return res.status(500).json({ error: "Firebase configuration error" });
-      }
-
-      // Support either donorId or email in the querystring
-      const donorIdRaw = req.query.donorId;
-      const donorId =
-        typeof donorIdRaw === "string"
-          ? donorIdRaw.trim()
-          : Array.isArray(donorIdRaw)
-          ? donorIdRaw[0].trim()
-          : "";
-
-      const emailRaw = req.query.email;
-      const emailLower =
-        typeof emailRaw === "string"
-          ? emailRaw.trim().toLowerCase()
-          : Array.isArray(emailRaw)
-          ? emailRaw[0].trim().toLowerCase()
-          : "";
-
-      const donationsRef = collection(db, "donations");
-      let qRef;
-
-      if (donorId) {
-        // Preferred: look up by donorId (stable)
-        qRef = query(donationsRef, where("donorId", "==", donorId), orderBy("createdAt", "desc"));
-      } else if (emailLower) {
-        // Fallback: look up by normalized email (requires you to store emailLower on writes)
-        qRef = query(
-          donationsRef,
-          where("emailLower", "==", emailLower),
-          orderBy("createdAt", "desc")
-        );
-      } else {
-        // No filter → return all (consider restricting in production/admin-only)
-        qRef = query(donationsRef, orderBy("createdAt", "desc"));
-      }
-
-      const snap = await getDocs(qRef);
-
-      const donations = snap.docs.map((doc) => ({
+      const { collection: getCollection, getDocs } = await import("firebase/firestore");
+      const querySnapshot = await getDocs(getCollection(db, "donations"));
+      const donations = querySnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data(),
+        ...doc.data()
       }));
       
-      console.log('donations', donations);
       return res.status(200).json({ donations });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching donations:", error);
-      // Firestore will include a console link for required composite indexes if needed
       return res.status(500).json({ error: "Failed to fetch donations" });
     }
   } else {

@@ -8,6 +8,7 @@ import {
   type User
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 
 const firebaseConfig = {
@@ -23,6 +24,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
 
 setPersistence(auth, browserLocalPersistence).catch(console.error);
 
@@ -35,4 +37,4 @@ export function onAuthToken(cb: (user: User | null, token: string | null) => voi
   });
 }
 
-export { firebaseApp, auth, db };
+export { firebaseApp, auth, db, storage };
