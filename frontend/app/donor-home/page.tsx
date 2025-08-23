@@ -580,6 +580,38 @@ export default function Dashboard() {
         <Grid item xs={12} md={6} sx={{ mb: 3 }}>
           {loading ? (
             <ChartLoadingPlaceholder />
+          ) : stats.count === 0 ? (
+            <Card>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+                By Region
+              </Typography>
+              <Box sx={{ 
+                height: 260, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 3
+              }}>
+                <img 
+                  src="/donation-heart.svg" 
+                  alt="Donation Heart" 
+                  style={{ 
+                    width: '60px', 
+                    height: '60px',
+                    opacity: 0.7
+                  }} 
+                />
+                <Typography variant="h6" sx={{ 
+                  color: 'text.secondary', 
+                  textAlign: 'center',
+                  fontWeight: 500,
+                  lineHeight: 1.4
+                }}>
+                  Make at least 1 donation to show analytics!
+                </Typography>
+              </Box>
+            </Card>
           ) : (
             <Card>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
@@ -613,6 +645,38 @@ export default function Dashboard() {
         <Grid item xs={12} md={6} sx={{ mb: 3 }}>
           {loading ? (
             <ChartLoadingPlaceholder />
+          ) : stats.count === 0 ? (
+            <Card>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+                By School
+              </Typography>
+              <Box sx={{ 
+                height: 260, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 3
+              }}>
+                <img 
+                  src="/donation-heart.svg" 
+                  alt="Donation Heart" 
+                  style={{ 
+                    width: '60px', 
+                    height: '60px',
+                    opacity: 0.7
+                  }} 
+                />
+                <Typography variant="h6" sx={{ 
+                  color: 'text.secondary', 
+                  textAlign: 'center',
+                  fontWeight: 500,
+                  lineHeight: 1.4
+                }}>
+                  Make at least 1 donation to show analytics!
+                </Typography>
+              </Box>
+            </Card>
           ) : (
             <Card>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>

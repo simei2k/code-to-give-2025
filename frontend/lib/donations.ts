@@ -17,6 +17,7 @@ export async function fetchDonations(params: {
   const qs = new URLSearchParams();
   if (params.email) qs.set("email", params.email);
   if (params.donorId) qs.set("donorId", params.donorId); // add support server-side if you want
+  console.log("🔥 Fetching donations with params:", qs.toString());
   const res = await fetch(`/api/donations?${qs.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to load donations: ${await res.text()}`);
   return (await res.json()) as { donations: Donation[] };
