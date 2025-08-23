@@ -585,7 +585,7 @@ export default function DonatePage() {
           }}>
             
             {/* Title */}
-            <Fade in timeout={1200}>
+            <Fade in timeout={1000}>
               <Typography 
                 variant="h2" 
                 align="center" 
@@ -602,7 +602,7 @@ export default function DonatePage() {
               </Typography>
             </Fade>
             
-            <Fade in timeout={1300}>
+            <Fade in timeout={1100}>
               <Typography 
                 variant="h6" 
                 align="center" 
@@ -620,14 +620,14 @@ export default function DonatePage() {
             </Fade>
 
             {/* Amount Display */}
-            <Fade in timeout={1400}>
+            <Fade in timeout={1200}>
               <AmountDisplay variant="h4" sx={{ mb: 2 }}>
                 {displayAmount}
               </AmountDisplay>
             </Fade>
 
             {/* Amount Slider */}
-            <Grow in timeout={1600}>
+            <Grow in timeout={1400}>
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
                 <Typography 
                   gutterBottom 
@@ -681,7 +681,7 @@ export default function DonatePage() {
             </Grow>
 
             {/* Custom Amount Input - Always visible */}
-            <Fade in timeout={1800}>
+            <Fade in timeout={1600}>
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
                 <TextField
                   label="Enter a custom amount"
@@ -762,7 +762,7 @@ export default function DonatePage() {
               </Box>
             </Fade>
             {(region || school) && (
-              <Fade in timeout={1880}>
+              <Fade in timeout={1680}>
                 <Box sx={{ px: { xs:1, md:2 }, mb:2, display:'flex', gap:1, flexWrap:'wrap', alignItems:'center' }}>
                   <Typography variant="caption" sx={{ fontWeight:600, color:'#006e34' }}>Selected:</Typography>
                   {region && (
@@ -776,7 +776,7 @@ export default function DonatePage() {
             )}
 
             {/* Donate Button */}
-            <Fade in timeout={1900}>
+            <Fade in timeout={1700}>
               <Box sx={{ px: { xs: 1, md: 2 }, mb: 2 }}>
                 <FloatingButton 
                   fullWidth 
@@ -789,7 +789,7 @@ export default function DonatePage() {
             </Fade>
 
             {/* Security Message */}
-            <Fade in timeout={2000}>
+            <Fade in timeout={1800}>
               <Typography 
                 variant="body2" 
                 align="center" 
@@ -809,7 +809,7 @@ export default function DonatePage() {
         </Box>
 
         {/* Original Leaderboard with Podium Bars */}
-        <Fade in timeout={2200}>
+        <Fade in timeout={1800}>
           <LeaderboardContainer elevation={0}>
             <Typography 
               variant="h5" 
