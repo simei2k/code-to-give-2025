@@ -88,7 +88,7 @@ const teamMembers = [
 ];
 
 export default function AboutPage() {
-  const [activeSection, setActiveSection] = useState(1);
+  const [activeSection, setActiveSection] = useState(0); // Start with team section active
   const [showScrollTop, setShowScrollTop] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -179,194 +179,9 @@ export default function AboutPage() {
 
       <Box sx={{ py: 4, position: 'relative', zIndex: 1 }}>
         <Container maxWidth="md">
-          {/* Contact Us Section with animation */}
-          <Fade in={true} timeout={800}>
-            <Box ref={sectionRefs[0]}>
-              <Box 
-                sx={{ 
-                  display: 'table',
-                  bgcolor: 'white',
-                  px: 3, 
-                  py: 1, 
-                  borderRadius: 3,
-                  mb: 2,
-                  mx: 'auto',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                  transform: 'translateY(20px)', // Starting position
-                  animation: 'float 3s ease-in-out infinite',
-                  '@keyframes float': {
-                    '0%': {
-                      transform: 'translateY(0px)'
-                    },
-                    '50%': {
-                      transform: 'translateY(-10px)'
-                    },
-                    '100%': {
-                      transform: 'translateY(0px)'
-                    }
-                  }
-                }}
-              >
-                <Typography 
-                  variant="h4" 
-                  component="h2" 
-                  color="#006e34" 
-                  align="center" 
-                  fontWeight="bold"
-                  sx={{
-                    background: 'linear-gradient(45deg, #006e34 30%, #4caf50 90%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}
-                >
-                  Contact Us
-                </Typography>
-              </Box>
-
-              <Paper 
-                elevation={6}
-                sx={{ 
-                  p: 4, 
-                  borderRadius: 4,
-                  position: 'relative',
-                  background: 'white',
-                  mb: 6,
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-5px)',
-                    boxShadow: '0 12px 28px rgba(0,0,0,0.1)'
-                  }
-                }}
-              >
-                <Typography 
-                  variant="h6" 
-                  align="center" 
-                  sx={{ 
-                    mb: 2,
-                    color: '#006e34',
-                    fontWeight: 600
-                  }}
-                >
-                  We would love to hear from you!
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  align="center" 
-                  sx={{ mb: 4, color: '#006e34' }}
-                >
-                  Please write or call us with your questions or comments.
-                </Typography>
-
-                <Grid container spacing={3} justifyContent="left">
-
-                  
-                  <Grid item xs={12} md={4}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      mb: { xs: 2, md: 0 },
-                      height: '100%',
-                      transition: 'transform 0.2s',
-                      '&:hover': {
-                        transform: 'scale(1.03)'
-                      }
-                    }}>
-                      <PhoneIcon sx={{ color: '#006e34', mr: 1.5, fontSize: '1.8rem' }} />
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight="bold" color="#006e34">
-                          Phone:
-                        </Typography>
-                        <Typography variant="body1">
-                          (852) 9198 3989 - Quincy Tse
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={12} md={4}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      height: '100%',
-                      transition: 'transform 0.2s',
-                      '&:hover': {
-                        transform: 'scale(1.03)'
-                      }
-                    }}>
-                      <EmailIcon sx={{ color: '#006e34', mr: 1.5, fontSize: '1.8rem' }} />
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight="bold" color="#006e34">
-                          Email:
-                        </Typography>
-                        <Typography variant="body1">
-                          <a 
-                            href="mailto:info@reach.org.hk" 
-                            style={{ 
-                              color: '#006e34', 
-                              textDecoration: 'none',
-                              borderBottom: '1px dotted #006e34'
-                            }}
-                          >
-                            info@reach.org.hk
-                          </a>
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} md={4}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      mb: { xs: 2, md: 0 },
-                      height: '100%',
-                      transition: 'transform 0.2s',
-                      '&:hover': {
-                        transform: 'scale(1.03)'
-                      }
-                    }}>
-                      <LocationOnIcon sx={{ color: '#006e34', mr: 1.5, fontSize: '1.8rem' }} />
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight="bold" color="#006e34">
-                          Address:
-                        </Typography>
-                        <Typography variant="body1">
-                          Room 902, 9/F, 168 Queen&apos;s Road Central
-                        </Typography>
-                        <Typography variant="body1">
-                          Central, Hong Kong
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                </Grid>
-                
-                <Box sx={{ 
-                  mt: 4, 
-                  width: '100%', 
-                  height: '200px', 
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}>
-                  <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3691.9071339578917!2d114.15252!3d22.2835!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3404007b56b953a3%3A0x5c3f40f9004566e7!2s168%20Queen&#39;s%20Rd%20Central%2C%20Central%2C%20Hong%20Kong!5e0!3m2!1sen!2s!4v1692753591428!5m2!1sen!2s" 
-                    width="100%" 
-                    height="100%" 
-                    style={{border:0}} 
-                    allowFullScreen 
-                    loading="lazy" 
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
-                </Box>
-              </Paper>
-            </Box>
-          </Fade>
-
           {/* Meet Our Team Section */}
-          <Grow in={activeSection >= 1} timeout={800}>
-            <Box ref={sectionRefs[1]}>
+          <Grow in={activeSection >= 0} timeout={800}>
+            <Box ref={sectionRefs[0]}>
               <Box sx={{ position: 'relative', mb: 5 }}>
                 <Typography 
                   variant="h3" 
@@ -410,7 +225,7 @@ export default function AboutPage() {
               {/* Team Members with staggered animations */}
               {teamMembers.map((member, index) => (
                 <Fade 
-                  in={activeSection >= 1} 
+                  in={activeSection >= 0} 
                   style={{ transitionDelay: `${100 * index}ms` }}
                   key={index}
                 >
@@ -506,7 +321,7 @@ export default function AboutPage() {
                         variant="body1" 
                         sx={{ 
                           mb: 3,
-                          whiteSpace: 'pre-line',
+                          whiteSpace: 'normal',
                           color: '#333',
                           fontSize: '1rem',
                           lineHeight: 1.7,
@@ -554,7 +369,7 @@ export default function AboutPage() {
                             variant="body1" 
                             sx={{ 
                               fontStyle: 'italic',
-                              whiteSpace: 'pre-line',
+                              whiteSpace: 'normal',
                               color: '#333',
                               textAlign: 'center',
                               fontSize: '1.05rem',
@@ -592,8 +407,8 @@ export default function AboutPage() {
           </Grow>
 
           {/* Partners and Sponsors Sections with animations */}
-          <Grow in={activeSection >= 2} timeout={800}>
-            <Box ref={sectionRefs[2]}>
+          <Grow in={activeSection >= 1} timeout={800}>
+            <Box ref={sectionRefs[1]}>
               {/* Our Official Partners Section */}
               <Box sx={{ mb: 10 }}>
                 <Typography 
@@ -843,8 +658,8 @@ export default function AboutPage() {
           </Grow>
 
           {/* Partnering Organizations Section */}
-          <Grow in={activeSection >= 2} timeout={800}>
-            <Box ref={sectionRefs[3]}>
+          <Grow in={activeSection >= 1} timeout={800}>
+            <Box ref={sectionRefs[2]}>
               <Typography 
                 variant="h3" 
                 align="center" 
@@ -967,6 +782,190 @@ export default function AboutPage() {
               </Box>
             </Box>
           </Grow>
+          
+          <Fade in={true} timeout={800}>
+            <Box ref={sectionRefs[3]} sx={{ mt: 10 }}>
+              <Box 
+                sx={{ 
+                  display: 'table',
+                  bgcolor: 'white',
+                  px: 3, 
+                  py: 1, 
+                  alignItems: 'center',
+                  borderRadius: 3,
+                  mb: 2,
+                  mx: 'auto',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                  transform: 'translateY(20px)', // Starting position
+                  animation: 'float 3s ease-in-out infinite',
+                  '@keyframes float': {
+                    '0%': {
+                      transform: 'translateY(0px)'
+                    },
+                    '50%': {
+                      transform: 'translateY(-10px)'
+                    },
+                    '100%': {
+                      transform: 'translateY(0px)'
+                    }
+                  }
+                }}
+              >
+                <Typography 
+                  variant="h4" 
+                  component="h2" 
+                  color="#006e34" 
+                  align="center" 
+                  fontWeight="bold"
+                  sx={{
+                    background: 'linear-gradient(45deg, #006e34 30%, #4caf50 90%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}
+                >
+                  Contact Us
+                </Typography>
+              </Box>
+
+              <Paper 
+                elevation={6}
+                sx={{ 
+                  p: 4, 
+                  borderRadius: 4,
+                  position: 'relative',
+                  background: 'white',
+                  mb: 6,
+                  maxWidth: '800px', // Added to limit width
+                  mx: 'auto', // Added to center the card
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: '0 12px 28px rgba(0,0,0,0.1)'
+                  }
+                }}
+              >
+                <Typography 
+                  variant="h6" 
+                  align="center" 
+                  sx={{ 
+                    mb: 2,
+                    color: '#006e34',
+                    fontWeight: 600
+                  }}
+                >
+                  We would love to hear from you!
+                </Typography>
+                <Typography 
+                  variant="body1" 
+                  align="center" 
+                  sx={{ mb: 4, color: '#006e34' }}
+                >
+                  Please write or call us with your questions or comments.
+                </Typography>
+                  
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      mb: { xs: 2, md: 0 },
+                      height: '100%',
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'scale(1.03)'
+                      }
+                    }}>
+                      <PhoneIcon sx={{ color: '#006e34', mr: 1.5, fontSize: '1.8rem' }} />
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="bold" color="#006e34">
+                          Phone:
+                        </Typography>
+                        <Typography variant="body1">
+                          (852) 9198 3989 - Quincy Tse
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      height: '100%',
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'scale(1.03)'
+                      }
+                    }}>
+                      <EmailIcon sx={{ color: '#006e34', mr: 1.5, fontSize: '1.8rem' }} />
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="bold" color="#006e34">
+                          Email:
+                        </Typography>
+                        <Typography variant="body1">
+                          <a 
+                            href="mailto:info@reach.org.hk" 
+                            style={{ 
+                              color: '#006e34', 
+                              textDecoration: 'none',
+                              borderBottom: '1px dotted #006e34'
+                            }}
+                          >
+                            info@reach.org.hk
+                          </a>
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  <Grid container spacing={3} justifyContent="left">
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      mb: { xs: 2, md: 0 },
+                      height: '100%',
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'scale(1.03)'
+                      }
+                    }}>
+                      <LocationOnIcon sx={{ color: '#006e34', mr: 1.5, fontSize: '1.8rem' }} />
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="bold" color="#006e34">
+                          Address:
+                        </Typography>
+                        <Typography variant="body1">
+                          Room 902, 9/F, 168 Queen&apos;s Road Central
+                        </Typography>
+                        <Typography variant="body1">
+                          Central, Hong Kong
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+                
+                <Box sx={{ 
+                  mt: 4, 
+                  width: '100%', 
+                  height: '200px', 
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                  <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3691.9071339578917!2d114.15252!3d22.2835!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3404007b56b953a3%3A0x5c3f40f9004566e7!2s168%20Queen&#39;s%20Rd%20Central%2C%20Central%2C%20Hong%20Kong!5e0!3m2!1sen!2s!4v1692753591428!5m2!1sen!2s" 
+                    width="100%" 
+                    height="100%" 
+                    style={{border:0}} 
+                    allowFullScreen 
+                    loading="lazy" 
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
+                </Box>
+              </Paper>
+            </Box>
+          </Fade>
         </Container>
       </Box>
     </Box>
