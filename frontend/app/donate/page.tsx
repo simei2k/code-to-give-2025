@@ -89,29 +89,36 @@ const RotatingCardsContainer = styled(Box)({
 });
 
 // Individual rotating card
-const RotatingCard = styled(Box)<{ isActive: boolean; rotation: number; zIndex: number }>(({ isActive, rotation, zIndex }) => ({
-  position: 'absolute',
-  width: '100%',
-  height: '100%',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  transform: `perspective(1000px) rotateY(${rotation}deg) translateZ(${isActive ? '0px' : '-50px'})`,
-  opacity: isActive ? 1 : 0.6,
-  transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-  zIndex: zIndex,
-  boxShadow: isActive 
-    ? '0 15px 30px rgba(0, 110, 52, 0.3), 0 5px 15px rgba(0,0,0,0.1)' 
-    : '0 8px 16px rgba(0, 110, 52, 0.2)',
-  '& img': {
+const RotatingCard = styled(Box, {
+  shouldForwardProp: (prop) =>
+    !['isActive', 'rotation', 'zIndex'].includes(prop as string),
+})<{ isActive: boolean; rotation: number; zIndex: number }>(
+  ({ isActive, rotation, zIndex }) => ({
+    position: 'absolute',
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
     borderRadius: '16px',
-  }
-}));
+    overflow: 'hidden',
+    transform: `perspective(1000px) rotateY(${rotation}deg) translateZ(${isActive ? '0px' : '-50px'})`,
+    opacity: isActive ? 1 : 0.6,
+    transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    zIndex, // OK to use here – it won't be forwarded as an attribute
+    boxShadow: isActive
+      ? '0 15px 30px rgba(0, 110, 52, 0.3), 0 5px 15px rgba(0,0,0,0.1)'
+      : '0 8px 16px rgba(0, 110, 52, 0.2)',
+    '& img': {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      borderRadius: '16px',
+    },
+  })
+);
 
 // Card overlay for text
-const CardOverlay = styled(Box)<{ isActive: boolean }>(({ isActive }) => ({
+const CardOverlay = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive: boolean }>(({ isActive }) => ({
   position: 'absolute',
   bottom: 0,
   left: 0,
