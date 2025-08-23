@@ -155,24 +155,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fffcec' }}>
+    <div 
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" 
+      style={{ 
+        background: 'linear-gradient(135deg, #fffcec 0%, #f5f2dc 50%, #fffcec 100%)'
+      }}
+    >
       <div className="max-w-md w-full space-y-8">
-                  <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {isLogin ? (
-                <>
-                  Welcome to <span style={{ color: '#006e34' }}>REACH</span>
-                </>
-              ) : (
-                "Create Your Account"
-              )}
-            </h2>
+        <div className="text-center">
+          {/* Project REACH Logo */}
+          <div className="mb-6 flex justify-center">
+            <img 
+              src="/reachlogo.png" 
+              alt="Project REACH Logo" 
+              className="w-32 h-32 md:w-40 md:h-40"
+            />
+          </div>
+          
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {isLogin ? (
+              <>
+                Welcome to <span style={{ color: '#006e34' }}>REACH</span>
+              </>
+            ) : (
+              "Create Your Account"
+            )}
+          </h2>
           <p className="text-gray-600">
             {isLogin ? "Log in to your account" : "Join our community today!"}
           </p>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow-xl rounded-lg sm:px-10 border border-gray-100">
+        <div 
+          className="py-8 px-6 shadow-xl rounded-3xl sm:px-10 border relative overflow-hidden"
+          style={{
+            background: 'rgba(255, 252, 236, 0.95)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 20px 40px rgba(0, 110, 52, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+            border: '1px solid rgba(0, 110, 52, 0.1)',
+          }}
+        >
+          {/* Glass effect background overlay */}
+          <div 
+            className="absolute inset-0 -z-10"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 252, 236, 0.8) 0%, rgba(245, 242, 220, 0.6) 100%)',
+            }}
+          />
+          
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {!isLogin && (
               <div>
@@ -302,7 +332,12 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500 font-medium">
+                <span 
+                  className="px-2 text-gray-600 font-medium"
+                  style={{
+                    background: 'rgba(255, 252, 236, 0.95)',
+                  }}
+                >
                   {isLogin ? "Don't have an account?" : "Already have an account?"}
                 </span>
               </div>

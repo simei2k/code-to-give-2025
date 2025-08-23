@@ -11,7 +11,13 @@ export default function Navbar() {
           <div className="flex h-16 items-center justify-between">
             {/* Logo/Brand */}
             <div className="flex items-center">
-              <span className="text-xl font-bold text-green-800">Code to Give</span>
+              <Link href="/" className="flex items-center">
+                <img 
+                  src="/projectreach.png" 
+                  alt="Project REACH" 
+                  className="h-10 w-auto"
+                />
+              </Link>
             </div>
             
             {/* Navigation links */}
