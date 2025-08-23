@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Open_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
-import { GlassCard, StyledContainer } from "./donate/page";
+import { AuthProvider } from "@/app/providers/AuthProvider";
 import GallerySection from "@/components/GallerySection";
 
 const inter = Inter({
@@ -35,9 +35,11 @@ export default function RootLayout({
         className={`${inter.variable} ${openSans.variable} antialiased`}
         style={{ fontFamily: 'var(--font-inter)' }}
       >
-        <Navbar />
-        <main>{children}</main>
-        <GallerySection />
+        <AuthProvider>
+          <Navbar />
+          <main>{children}</main>
+          <GallerySection />
+        </AuthProvider>
       </body>
     </html>
   );
