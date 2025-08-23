@@ -97,7 +97,7 @@ export default function PDFViewer({ storagePath = '' }: PDFViewerProps) {
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Title */}
-      <Typography variant="h3" sx={{ mb: 3, color: '#006e34', fontWeight: 'bold' }}>
+      <Typography variant="h5" sx={{ mb: 3, color: '#006e34', fontWeight: 'bold' }}>
         From our Children, with your help...
       </Typography>
 
