@@ -541,7 +541,6 @@ export default function DonatePage() {
     }
   };
 
-  // Function to sort donors by totalDonated (highest first)
   const sortLeaderboard = (donors: any[]) => {
     return donors.sort((a, b) => b.totalDonated - a.totalDonated);
   };
@@ -550,7 +549,7 @@ export default function DonatePage() {
     console.log("🔥 Current user:", currentUser);
     console.log("🔥 Updating donation amount:", amount);
     
-    // Update the raw donors data
+
     const updatedDonors = donors.map((donor) =>
       donor.displayName === currentUser.displayName
         ? { ...donor, totalDonated: donor.totalDonated + amount }
@@ -558,13 +557,10 @@ export default function DonatePage() {
     );
     setDonors(updatedDonors);
     
-    // Update the formatted leaderboard data
     const sortedDonors = sortLeaderboard(updatedDonors);
     const formattedData = formatLeaderboardData(sortedDonors);
     setLeaderboardData(formattedData);
     
-    console.log("🔥 Updated donors:", updatedDonors);
-    console.log("🔥 Updated leaderboard:", formattedData);
   }
 
   // Function to format donors for display

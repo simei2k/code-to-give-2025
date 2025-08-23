@@ -37,6 +37,7 @@ import { GlassCard, StyledContainer } from "../donate/page";
 import { useEffect, useState } from "react";
 import { Tooltip as MuiTooltip, tooltipClasses } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { Skeleton, CircularProgress } from "@mui/material";
 
 type DonorProfile = {
   id: string;
@@ -93,6 +94,39 @@ const Card = (p: any) => (
     }}
     {...p}
   />
+);
+
+// Loading placeholder components
+const KpiLoadingPlaceholder = () => (
+  <Card>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Skeleton variant="circular" width={40} height={40} />
+      <Box sx={{ flex: 1 }}>
+        <Skeleton variant="text" width="60%" height={24} />
+        <Skeleton variant="text" width="40%" height={20} />
+      </Box>
+    </Box>
+  </Card>
+);
+
+const ChartLoadingPlaceholder = () => (
+  <Card>
+    <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
+    <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <CircularProgress sx={{ color: '#0F6E35' }} />
+    </Box>
+  </Card>
+);
+
+const BadgesLoadingPlaceholder = () => (
+  <Card>
+    <Skeleton variant="text" width="30%" height={28} sx={{ mb: 2 }} />
+    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Skeleton key={i} variant="rounded" width={120} height={40} />
+      ))}
+    </Box>
+  </Card>
 );
 
 function Kpi({
@@ -307,10 +341,14 @@ export default function Dashboard() {
       ? stats.byMonth
       : [{ label: "—", total: 0, cumulative: 0 }];
 
-  // pie data needs colors
-  const pieData = stats.byDistrict.length
-    ? stats.byDistrict
-    : [{ district: "—", total: 1, count: 0 }];
+  // pie data for region and school charts
+  const regionData = stats.byRegion.length
+    ? stats.byRegion
+    : [{ region: "—", total: 1, count: 0 }];
+
+  const schoolData = stats.bySchool.length
+    ? stats.bySchool
+    : [{ school: "—", total: 1, count: 0 }];
 
 
   return (
@@ -347,29 +385,47 @@ export default function Dashboard() {
           justifyContent="center"
           alignItems="center"
         >
-          <Grid item xs={12} md={3}>
-            <Kpi
-              icon={<CheckCircle2 />}
-              label="Total Donated"
-              value={currency(stats.total)}
-            />
-          </Grid>
+          {loading ? (
+            // Loading placeholders for KPI cards
+            <>
+              <Grid item xs={12} md={3}>
+                <KpiLoadingPlaceholder />
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <KpiLoadingPlaceholder />
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <KpiLoadingPlaceholder />
+              </Grid>
+            </>
+          ) : (
+            // Actual KPI cards
+            <>
+              <Grid item xs={12} md={3}>
+                <Kpi
+                  icon={<CheckCircle2 />}
+                  label="Total Donated"
+                  value={currency(stats.total)}
+                />
+              </Grid>
 
-          <Grid item xs={12} md={3}>
-            <Kpi
-              icon={<Gift />}
-              label="Donations"
-              value={String(stats.count)}
-            />
-          </Grid>
+              <Grid item xs={12} md={3}>
+                <Kpi
+                  icon={<Gift />}
+                  label="Donations"
+                  value={String(stats.count)}
+                />
+              </Grid>
 
-          <Grid item xs={12} md={3}>
-            <Kpi
-              icon={<Target />}
-              label="Largest Single Gift"
-              value={currency(stats.largest)}
-            />
-          </Grid>
+              <Grid item xs={12} md={3}>
+                <Kpi
+                  icon={<Target />}
+                  label="Largest Single Gift"
+                  value={currency(stats.largest)}
+                />
+              </Grid>
+            </>
+          )}
         </Grid>
       </Box>
 
@@ -377,69 +433,73 @@ export default function Dashboard() {
       <Grid>
         {/* Area chart */}
         <Grid item xs={12} md={8} sx={{ mb: 3 }}>
-          <Card>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
-              Cumulative Over Time
-            </Typography>
-            <Box sx={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer>
-                <AreaChart
-                  data={areaData} // expects { label, total, cumulative }
-                  margin={{ top: 10, right: 16, bottom: 0, left: 0 }}
-                >
-                  <defs>
-                    {/* cumulative fill */}
-                    <linearGradient id="gCum" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={GREEN} stopOpacity={0.35} />
-                      <stop offset="100%" stopColor={GREEN} stopOpacity={0.04} />
-                    </linearGradient>
-                    {/* monthly total fill (lighter) */}
-                    <linearGradient id="gMon" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={GREEN} stopOpacity={0.18} />
-                      <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
+          {loading ? (
+            <ChartLoadingPlaceholder />
+          ) : (
+            <Card>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+                Cumulative Over Time
+              </Typography>
+              <Box sx={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer>
+                  <AreaChart
+                    data={areaData} // expects { label, total, cumulative }
+                    margin={{ top: 10, right: 16, bottom: 0, left: 0 }}
+                  >
+                    <defs>
+                      {/* cumulative fill */}
+                      <linearGradient id="gCum" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={GREEN} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={GREEN} stopOpacity={0.04} />
+                      </linearGradient>
+                      {/* monthly total fill (lighter) */}
+                      <linearGradient id="gMon" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={GREEN} stopOpacity={0.18} />
+                        <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
 
-                  <CartesianGrid stroke="#e5e7eb" strokeOpacity={0.6} />
-                  <XAxis
-                    dataKey="label"
-                    tickMargin={8}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={(v) => compactCurrency(Number(v))}
-                    width={56}
-                    tickMargin={8}
-                    axisLine={false}
-                    tickLine={false}
-                  />
+                    <CartesianGrid stroke="#e5e7eb" strokeOpacity={0.6} />
+                    <XAxis
+                      dataKey="label"
+                      tickMargin={8}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tickFormatter={(v) => compactCurrency(Number(v))}
+                      width={56}
+                      tickMargin={8}
+                      axisLine={false}
+                      tickLine={false}
+                    />
 
-                  <RechartsTooltip content={<CustomTooltip />} />
+                    <RechartsTooltip content={<CustomTooltip />} />
 
-                  {/* Cumulative (primary) */}
-                  <Area
-                    type="monotone"
-                    dataKey="cumulative"
-                    stroke={GREEN}
-                    fill="url(#gCum)"
-                    strokeWidth={3}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                    connectNulls
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                    {/* Cumulative (primary) */}
+                    <Area
+                      type="monotone"
+                      dataKey="cumulative"
+                      stroke={GREEN}
+                      fill="url(#gCum)"
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                      connectNulls
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
 
-                  {/* Optional zoom/scroll for long ranges (desktop only) */}
-                  {/* Uncomment if you expect many months:
-                  <Brush height={16} travellerWidth={8} />
-                  */}
-                </AreaChart>
-              </ResponsiveContainer>
-            </Box>
+                    {/* Optional zoom/scroll for long ranges (desktop only) */}
+                    {/* Uncomment if you expect many months:
+                    <Brush height={16} travellerWidth={8} />
+                    */}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </Box>
 
-          </Card>
+            </Card>
+          )}
         </Grid>
 
         {/* Badges Section */}
@@ -516,33 +576,70 @@ export default function Dashboard() {
           )}
         </Grid>
 
-        {/* District distribution */}
-        <Grid item xs={12} md={5} sx={{ mb: 3 }}>
-          <Card>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
-              By District
-            </Typography>
-            <Box sx={{ height: 260 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="total"
-                    nameKey="district"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={GREENS[i % GREENS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <RechartsTooltip formatter={(v, n, e) => [currency(Number(v)), e.payload.district]} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Card>
+        {/* Region distribution */}
+        <Grid item xs={12} md={6} sx={{ mb: 3 }}>
+          {loading ? (
+            <ChartLoadingPlaceholder />
+          ) : (
+            <Card>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+                By Region
+              </Typography>
+              <Box sx={{ height: 260 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={regionData}
+                      dataKey="total"
+                      nameKey="region"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                    >
+                      {regionData.map((_, i) => (
+                        <Cell key={i} fill={GREENS[i % GREENS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                    <RechartsTooltip formatter={(v, n, e) => [currency(Number(v)), e.payload.region]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </Card>
+          )}
+        </Grid>
+
+        {/* School distribution */}
+        <Grid item xs={12} md={6} sx={{ mb: 3 }}>
+          {loading ? (
+            <ChartLoadingPlaceholder />
+          ) : (
+            <Card>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 800 }}>
+                By School
+              </Typography>
+              <Box sx={{ height: 260 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={schoolData}
+                      dataKey="total"
+                      nameKey="school"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                    >
+                      {schoolData.map((_, i) => (
+                        <Cell key={i} fill={GREENS[i % GREENS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                    <RechartsTooltip formatter={(v, n, e) => [currency(Number(v)), e.payload.school]} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </Card>
+          )}
         </Grid>
 
         {/* Recent donations */}
