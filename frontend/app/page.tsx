@@ -49,49 +49,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Tailwind Animations */}
-      <style global>{`
-        @layer utilities {
-          .animate-fade-in {
-            animation: fadeIn 1s ease both;
-          }
-          .animate-true-fade-in {
-            animation: trueFadeIn 1.5s cubic-bezier(0.23, 1, 0.32, 1) both;
-          }
-          .animate-true-fade-in-slow {
-            animation: trueFadeIn 2.5s cubic-bezier(0.23, 1, 0.32, 1) both;
-          }
-          .animate-slide-up {
-            animation: slideUp 1.2s cubic-bezier(0.23, 1, 0.32, 1) both;
-          }
-          .animate-bounce {
-            animation: bounce 2s infinite;
-          }
-          .animate-pulse {
-            animation: pulse 2s infinite;
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes trueFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes slideUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-          }
-        }
-      `}</style>
+      {/* Tailwind Animations - Moved to globals.css */}
 
       {/* About Section */}
       <section id="about" className="py-20 bg-white text-center">
