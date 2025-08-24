@@ -483,8 +483,10 @@ export default function DonatePage() {
         // Only update slider if value is within slider range (1-500)
         if (numValue >= 1 && numValue <= 500) {
           setAmount(numValue);
+        } else if (numValue > 500) {
+          // If value exceeds 500, keep slider at 500
+          setAmount(500);
         }
-        // If value exceeds 500, keep slider at 500 but allow custom amount to be higher
       }
     }
   };
