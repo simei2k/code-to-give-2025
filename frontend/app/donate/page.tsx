@@ -398,6 +398,7 @@ export default function DonatePage() {
   const [school, setSchool] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogStep, setDialogStep] = useState<'choose'|'login'|'confirm'|'confirm-anonymous'>('choose');
+  const [anonymousEmail, setAnonymousEmail] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -599,14 +600,19 @@ export default function DonatePage() {
 
   // Submit anonymous donation
   const submitAnonymous = async () => {
+    // choose email: user-provided valid optional email > logged in user's email > generated placeholder
+    const chosenEmail = anonymousEmail && isEmailValid(anonymousEmail)
+      ? anonymousEmail.trim()
+      : (currentUser?.email || `anonymous+${Date.now()}@donor.local`);
+    const caption = captionsBank[Math.floor(Math.random() * captionsBank.length)];
     const res = await fetch('/api/donations', {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({
         amount: numericAmount,
         displayName: 'Anonymous',
-        email: currentUser ? currentUser.email : `anonymous+${Date.now()}@donor.local`,
-        message: captionsBank[Math.random() * captionsBank.length],
+        email: chosenEmail,
+        message: caption,
         donorId: uid,
         district: region,
         school
@@ -621,6 +627,7 @@ export default function DonatePage() {
     setDialogOpen(false);
     setThankYouOpen(true);
     setDialogStep('choose');
+    setAnonymousEmail('');
   };
 
   const handleLogin = async () => {
@@ -1231,7 +1238,26 @@ export default function DonatePage() {
               <Typography variant="h6" sx={{ fontWeight:700, color:'#004d24' }}>{displayAmount}</Typography>
               <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
               <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>Anonymous</strong></Typography>
-              <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>Reminder: An anonymous donation will not be published to the leaderboard. If you're logged in, you can still view your donation in 'Profile'.</Typography>
+              <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>
+                Optional: Provide an email for a receipt & updates (leaving it blank keeps you uncontactable).
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                type="email"
+                label="Email (optional)"
+                placeholder="you@example.com"
+                value={anonymousEmail}
+                onChange={(e)=> setAnonymousEmail(e.target.value)}
+                sx={{ mt:2 }}
+                error={!!anonymousEmail && !isEmailValid(anonymousEmail)}
+                helperText={anonymousEmail
+                  ? (!isEmailValid(anonymousEmail) ? 'Invalid email format' : 'Will be used only for billing / newsletter')
+                  : 'Leave blank to skip receipts & updates'}
+              />
+              <Typography variant="caption" sx={{ mt:1, display:'block', color:'#006e34', opacity:0.7 }}>
+                This address isn’t shown publicly.
+              </Typography>
               <Box sx={{ display:'flex', gap:1, justifyContent:'center', flexWrap:'wrap', mt:2 }}>
                 {region && <Chip size="small" label={region} />}
                 {school && <Chip size="small" label={school} />}
@@ -1241,7 +1267,7 @@ export default function DonatePage() {
                 <Button
                   fullWidth
                   variant="contained"
-                  disabled={submitting}
+                  disabled={submitting || (!!anonymousEmail && !isEmailValid(anonymousEmail))}
                   onClick={async () => {
                     try {
                       setSubmitting(true);
