@@ -480,7 +480,11 @@ export default function DonatePage() {
       // Update slider if value is valid and within range
       if (value !== '' && !isNaN(Number(value))) {
         const numValue = Math.max(0, Number(value)); // Ensure non-negative
-        setAmount(Math.min(Math.max(numValue, 1), 500)); // Keep slider in bounds but allow custom amount to exceed
+        // Only update slider if value is within slider range (1-500)
+        if (numValue >= 1 && numValue <= 500) {
+          setAmount(numValue);
+        }
+        // If value exceeds 500, keep slider at 500 but allow custom amount to be higher
       }
     }
   };
@@ -550,6 +554,9 @@ export default function DonatePage() {
     console.log("🔥 Current user:", currentUser);
     console.log("🔥 Updating donation amount:", amount);
     
+    if (!currentUser) {
+      return;
+    }
 
     const updatedDonors = donors.map((donor) =>
       donor.displayName === currentUser.displayName
@@ -568,7 +575,7 @@ export default function DonatePage() {
   const formatLeaderboardData = (donors: any[]) => {
     return donors.map((donor, index) => ({
       id: donor.id,
-      name: donor.displayName === currentUser.displayName ? `${donor.displayName} (You)` : donor.displayName,
+      name: currentUser && donor.displayName === currentUser.displayName ? `${donor.displayName} (You)` : donor.displayName,
       amount: donor.totalDonated,
       rank: index + 1,
       message: captionsBank[Math.floor(Math.random() * captionsBank.length)],
@@ -670,7 +677,7 @@ export default function DonatePage() {
     setDialogOpen(false);
     setThankYouOpen(true);
     setDialogStep('choose');
-    updateLeaderboardAfterDonation(amount);
+    updateLeaderboardAfterDonation(numericAmount);
 
     try {
       const response = await fetch('/api/donor', {
@@ -680,19 +687,43 @@ export default function DonatePage() {
         },
         body: JSON.stringify({
           email: currentUser.email,
-          amount: amount // extra amount added to the total amount of the user
+          amount: numericAmount // extra amount added to the total amount of the user
         })
       });
   
       if (!response.ok) {
-        throw new Error('Failed to update donation');
+        // If donor doesn't exist, create them first
+        if (response.status === 404) {
+          console.log("🔥 Donor not found, creating new donor record...");
+          const createResponse = await fetch('/api/donor', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              displayName: currentUser.displayName || currentUser.email || 'Anonymous',
+              email: currentUser.email,
+              totalDonated: numericAmount,
+              donorId: currentUser.uid
+            })
+          });
+          
+          if (!createResponse.ok) {
+            throw new Error('Failed to create donor record');
+          }
+          
+          console.log("🔥 Donor record created successfully");
+        } else {
+          throw new Error('Failed to update donation');
+        }
+      } else {
+        const data = await response.json();
+        console.log("🔥 Donation updated successfully:", data);
       }
-  
-      const data = await response.json();
-      return data;
     } catch (error) {
       console.error('Error updating donation:', error);
-      throw error;
+      // Don't throw error here, just log it
+      // The donation was already created successfully
     }
   };
 
@@ -864,7 +895,7 @@ export default function DonatePage() {
                     min={1}
                     max={500}
                     valueLabelDisplay="auto"
-                    valueLabelFormat={(value) => `$${value}`}
+                    valueLabelFormat={(value) => value}
                     sx={{ mb: 2 }}
                   />
                 </Box>
@@ -1239,22 +1270,24 @@ export default function DonatePage() {
               <Typography variant="body2" sx={{ mt:1, color:'#006e34', opacity:0.8 }}>{school && region ? `${school}, ${region}` : ''}</Typography>
               <Typography variant="body2" sx={{ mt:2, color:'#006e34' }}>Donating as <strong>Anonymous</strong></Typography>
               <Typography variant="body2" sx={{ mt:1, color:'#006e34', fontStyle:'italic', opacity:0.8 }}>
-                Optional: Provide an email for a receipt & updates (leaving it blank keeps you uncontactable).
+                {(currentUser) ? 'Receipt and updates will be sent to your email.' : 'Optional: Provide an email for a receipt & updates (leaving it blank keeps you uncontactable).'}
               </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                type="email"
-                label="Email (optional)"
-                placeholder="you@example.com"
-                value={anonymousEmail}
-                onChange={(e)=> setAnonymousEmail(e.target.value)}
-                sx={{ mt:2 }}
-                error={!!anonymousEmail && !isEmailValid(anonymousEmail)}
-                helperText={anonymousEmail
-                  ? (!isEmailValid(anonymousEmail) ? 'Invalid email format' : 'Will be used only for billing / newsletter')
-                  : 'Leave blank to skip receipts & updates'}
-              />
+              {!currentUser && (
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="email"
+                  label="Email (optional)"
+                  placeholder="you@example.com"
+                  value={anonymousEmail}
+                  onChange={(e)=> setAnonymousEmail(e.target.value)}
+                  sx={{ mt:2 }}
+                  error={!!anonymousEmail && !isEmailValid(anonymousEmail)}
+                  helperText={anonymousEmail
+                    ? (!isEmailValid(anonymousEmail) ? 'Invalid email format' : 'Will be used only for billing / newsletter')
+                    : 'Leave blank to skip receipts & updates'
+                  }/>
+              )} 
               <Typography variant="caption" sx={{ mt:1, display:'block', color:'#006e34', opacity:0.7 }}>
                 This address isn’t shown publicly.
               </Typography>

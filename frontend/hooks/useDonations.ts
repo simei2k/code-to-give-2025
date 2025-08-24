@@ -48,16 +48,16 @@ function parseDateSafe(input: any): Date {
     });
   }
   
-export function useDonations(email?: string, donorId?: string | null) {
+export function useDonations(email?: string) {
   const [loading, setLoading] = useState(true);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!email && !donorId) return;
+    if (!email) return;
     let mounted = true;
     setLoading(true);
-    fetchDonations({ email, donorId })
+    fetchDonations({ email })
       .then(({ donations }) => {
         if (!mounted) return;
         // sort oldest→newest
@@ -72,7 +72,7 @@ export function useDonations(email?: string, donorId?: string | null) {
     return () => {
       mounted = false;
     };
-  }, [email, donorId]);
+  }, [email]);
 
   const stats: Stats = useMemo(() => {
     if (donations.length === 0)

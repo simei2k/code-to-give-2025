@@ -100,6 +100,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ donor: shapeForApi(docSnap.id, data) });
     }
 
+    if (req.method === "POST") {
+      const { displayName, email, totalDonated, donorId } = req.body;
+
+      // Validate required fields
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email is required and must be a string" });
+      }
+
+      if (!displayName || typeof displayName !== "string") {
+        return res.status(400).json({ error: "Display name is required and must be a string" });
+      }
+
+      if (!totalDonated || !Number.isFinite(Number(totalDonated)) || Number(totalDonated) < 0) {
+        return res.status(400).json({ error: "Total donated is required and must be a non-negative number" });
+      }
+
+      try {
+        // Create new donor record
+        const donorData = {
+          displayName: displayName.trim(),
+          email: email.trim(),
+          totalDonated: Number(totalDonated),
+          badges: [],
+          createdAt: serverTimestamp(),
+          donorId: donorId || null
+        };
+
+        const docRef = doc(db, "donors", donorId || email);
+        await setDoc(docRef, donorData);
+
+        console.log("🔥 New donor created:", donorData);
+
+        return res.status(201).json({
+          message: "Donor created successfully",
+          donor: shapeForApi(docRef.id, coerceToSchema(donorData))
+        });
+      } catch (err: any) {
+        console.error("Error creating donor:", err);
+        return res.status(500).json({ error: err?.message || "Failed to create donor" });
+      }
+    }
+
     if (req.method === "PUT") {
       const { email, amount } = req.body;
 
@@ -150,7 +192,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Method not allowed
-    res.setHeader("Allow", "GET, PUT");
+    res.setHeader("Allow", "GET, POST, PUT");
     return res.status(405).json({ error: "Method Not Allowed" });
   } catch (err: any) {
     console.error("[pages/api/donor] error", err);
