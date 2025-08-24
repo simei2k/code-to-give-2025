@@ -17,6 +17,8 @@ interface GenerateNewsletterOptions {
   dryRun?: boolean; // if true, skip sending email
   skipPdf?: boolean; // for fast preview
   useTemplate?: boolean; // if true, build html from template file
+  returnPdfBase64?: boolean; // include base64 in result
+  saveToTemp?: boolean; // write pdf to /tmp (server runtime) and include tempPath
 }
 
 export interface NewsletterGenerationResult {
@@ -25,6 +27,8 @@ export interface NewsletterGenerationResult {
   pdfBuffer: Buffer;
   sections: GeneratedSection[];
   sent?: { success: boolean; count?: number; error?: any };
+  pdfBase64?: string;
+  tempPath?: string;
 }
 
 // Basic HTML shell (inline styles for email compatibility)
@@ -131,13 +135,25 @@ export async function generateNewsletter(options: GenerateNewsletterOptions = {}
 
   const html = options.useTemplate ? buildFromTemplate(subject, sections) : buildHtml(subject, sections);
   const pdfBuffer = options.skipPdf ? Buffer.from('') : await renderPdf(html);
+  let tempPath: string | undefined;
+  if (!options.skipPdf && options.saveToTemp) {
+    try {
+      const safeName = subject.replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase();
+      // In many serverless environments writing to /tmp is allowed.
+      const fs = await import('fs');
+      tempPath = `/tmp/${safeName}.pdf`;
+      fs.writeFileSync(tempPath, pdfBuffer);
+    } catch (e) {
+      // ignore write errors
+    }
+  }
 
   let sent: NewsletterGenerationResult['sent'];
   if (!options.dryRun) {
     sent = await sendNewsletterToDonors(subject, html, pdfBuffer);
   }
 
-  return { subject, html, pdfBuffer, sections, sent };
+  return { subject, html, pdfBuffer, sections, sent, pdfBase64: options.returnPdfBase64 ? pdfBuffer.toString('base64') : undefined, tempPath };
 }
 
 async function renderPdf(html: string): Promise<Buffer> {
