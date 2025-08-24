@@ -2,6 +2,7 @@ import StoriesHomeSection from "@/components/StoriesHomeSection";
 import LiveCounter from "@/components/LiveCounter";
 import StatCard from "@/components/StatCard";
 import { FaMoneyBillWave, FaUserFriends, FaClock, FaUsers, FaCalendarCheck } from "react-icons/fa";
+import NewButton from "@/components/NewButton";
 
 export default function Home() {
   return (
@@ -33,19 +34,18 @@ export default function Home() {
           <p className="text-2xl md:text-3xl text-white max-w-2xl mb-8 animate-fade-in delay-200">
             Hong Kong's first charity targeting the English proficiency gap among underserved kindergarteners
           </p>
-          <div className="flex flex-col md:flex-row gap-4 justify-center animate-fade-in delay-400">
-            <a
-              href="/donate"
-              className="inline-block bg-[var(--color-secondary)] text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-green-800 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-green-300 animate-bounce"
-            >
-              Donate Now
-            </a>
+          <div className="flex flex-col md:flex-row gap-8 justify-center animate-fade-in delay-400">
             <a
               href="/stories"
-              className="inline-block bg-white text-[var(--color-secondary)] px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-gray-200 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-green-300 animate-pulse"
-            >
+              >
+              <NewButton size='medium' color='secondary'>
               Check Out Our Stories
+              </NewButton>
             </a>
+            <NewButton size='medium'
+            >
+              Donate Now!
+            </NewButton>
           </div>
         </div>
       </section>
@@ -222,8 +222,11 @@ export default function Home() {
           <h2 className="text-5xl font-bold text-[var(--color-secondary)] text-center mb-8">Our Stories</h2>
           <StoriesHomeSection />
           <div className="flex justify-center mt-8">
-            <a href="/stories" className="inline-block bg-white text-[var(--color-secondary)] px-8 py-3 rounded-full font-semibold shadow hover:bg-gray-200 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-green-300">
+            <a href="/stories" >
+            <NewButton size='medium' color='secondary'>
+
               View More Stories
+              </NewButton>
             </a>
           </div>
         </div>
@@ -238,36 +241,13 @@ export default function Home() {
           </p>
           <a
             href="/donate"
-            className="inline-block bg-white text-[var(--color-secondary)] px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-gray-200 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-green-300"
-          >
+            >
+            <NewButton size='medium'>
             Donate Now
+            </NewButton>
           </a>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-8 bg-gray-800 text-white text-center">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-            <div className="mb-4 md:mb-0">
-              <a href="/" className="text-3xl font-extrabold text-yellow-400">
-                Project REACH
-              </a>
-            </div>
-            <div className="flex flex-col md:flex-row gap-4">
-              <a href="/about" className="hover:underline">About Us</a>
-              <a href="/stories" className="hover:underline">Our Stories</a>
-              <a href="/donate" className="hover:underline">Donate</a>
-              <a href="/contact" className="hover:underline">Contact</a>
-            </div>
-          </div>
-          <div className="border-t border-gray-700 pt-4">
-            <p className="text-sm text-gray-400">
-              &copy; {new Date().getFullYear()} Project REACH. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </>
   );
 }

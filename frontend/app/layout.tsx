@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { AuthProvider } from "@/app/providers/AuthProvider";
 import GallerySection from "@/components/GallerySection";
+import Footer from "@/components/Footer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -39,6 +40,7 @@ export default function RootLayout({
           <Navbar />
           <main>{children}</main>
           <GallerySection />
+          <Footer />
         </AuthProvider>
       </body>
     </html>
