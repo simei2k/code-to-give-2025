@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { GlassCard, StyledContainer } from "../donate/page";
 
 export default function LoginPage() {
@@ -109,6 +109,26 @@ export default function LoginPage() {
         }
 
         const token = await user.getIdToken();
+
+        // Create donor record in Firestore
+        try {
+          const donorData = {
+            displayName: formData.displayName.trim(),
+            email: user.email,
+            totalDonated: 0,
+            badges: [],
+            createdAt: new Date(),
+            donorId: user.uid
+          };
+          
+          // Add to donors collection
+          const { doc, setDoc } = await import("firebase/firestore");
+          await setDoc(doc(db, "donors", user.uid), donorData);
+          console.log("Donor record created:", donorData);
+        } catch (donorError) {
+          console.error("Failed to create donor record:", donorError);
+          // Don't fail the signup if donor record creation fails
+        }
 
         setSuccess("Account created successfully!");
         const userData = {

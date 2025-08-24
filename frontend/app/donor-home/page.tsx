@@ -323,7 +323,7 @@ export default function Dashboard() {
     return () => { mounted = false; };
   }, [donorId, email]);
 
-  const { loading, error, donations, stats } = useDonations(email, donorId);
+  const { loading, error, donations, stats } = useDonations(email);
 
   if (loadingAuth) return null;
   if (!user) {
@@ -727,7 +727,7 @@ export default function Dashboard() {
                     <TableCell>Date</TableCell>
                     <TableCell>District</TableCell>
                     <TableCell>School</TableCell>
-                    <TableCell>Message</TableCell>
+                    <TableCell>Anonymous?</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -750,7 +750,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell>{(d as any).district || "-"}</TableCell>
                         <TableCell>{(d as any).school || "-"}</TableCell>
-                        <TableCell>{d.message}</TableCell>
+                        <TableCell>{d.displayName === 'Anonymous' ? '✅' : '❌'}</TableCell>
                       </TableRow>
                     ))}
                 </TableBody>
