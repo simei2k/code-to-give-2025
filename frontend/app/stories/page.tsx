@@ -35,7 +35,7 @@ export default async function Stories() {
           </p>
           <HKMapbox geojsonUrl="/hk-districts.geojson" />
         </section>
-  <StoriesPageClient posts={items as any} />
+        <StoriesPageClient posts={items as any} />
       </main>
 
     </StyledContainer>
